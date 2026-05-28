@@ -70,6 +70,8 @@ export function PerformancePanel() {
   const replayIndex = useDashboardStore((s) => s.replayIndex);
   const replayActive = useDashboardStore((s) => s.replayActive);
   const dashboard = useDashboardStore((s) => s.dashboard?.data);
+  const error = useDashboardStore((s) => s.error);
+  const isLoading = useDashboardStore((s) => s.isLoading);
   const [range, setRange] = useState<RangeKey>("all");
 
   const historical = useMemo((): HistoricalChartSnapshot | null => {
@@ -85,7 +87,13 @@ export function PerformancePanel() {
   if (!historical) {
     return (
       <Panel title="Portfolio Performance" className="h-full min-h-[340px]">
-        Loading chart…
+        <p className="text-sm text-zinc-500">
+          {isLoading
+            ? "Loading chart…"
+            : error
+              ? error
+              : "No performance history yet. Refresh market data or run the agent replay."}
+        </p>
       </Panel>
     );
   }
@@ -157,14 +165,11 @@ export function PerformancePanel() {
           </span>
         </div>
       </div>
-      <div className="min-h-0 flex-1">
-        <PerformanceChart
-          historical={sliced}
-          liveReplay={liveInRange}
-          replayCursorIndex={cursorIndex}
-          className="h-full min-h-[220px]"
-        />
-      </div>
+      <PerformanceChart
+        historical={sliced}
+        liveReplay={liveInRange}
+        replayCursorIndex={cursorIndex}
+      />
     </Panel>
   );
 }

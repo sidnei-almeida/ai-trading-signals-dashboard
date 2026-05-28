@@ -59,12 +59,12 @@ export function PerformanceChart({
       : undefined;
 
   return (
-    <div className={cn("flex h-full min-h-[220px] w-full flex-col", className)}>
+    <div className={cn("flex w-full flex-col", className)}>
       <p className="mb-1 shrink-0 text-[10px] text-[var(--wasabi-dim)]">
         {drawdown}
         {hasLive ? " · live replay overlay" : ""}
       </p>
-      <div className="min-h-0 flex-1">
+      <div className="h-[240px] w-full shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 2, right: 4, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={CHART.grid} vertical={false} />
@@ -125,8 +125,7 @@ export function PerformanceChart({
               dataKey="agentHistorical"
               name="PPO Backtest"
               stroke={CHART.agent}
-              strokeWidth={1.5}
-              strokeOpacity={0.35}
+              strokeWidth={2}
               dot={false}
               isAnimationActive={false}
             />

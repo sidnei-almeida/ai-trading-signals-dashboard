@@ -1,6 +1,7 @@
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
 
+import bundledDemoPrices from "@/lib/demo-sp500-prices.json";
 import { INITIAL_BALANCE, RL_TICKERS, TRANSACTION_COST } from "@/lib/constants";
 import type {
   AllocationWeights,
@@ -9,9 +10,9 @@ import type {
   Ticker,
 } from "@/types/rl-trading";
 
-function parseCsvPrices(): PriceHistoryPoint[] {
-  const csvPath = path.join(process.cwd(), "data", "sp500.csv");
-  const raw = readFileSync(csvPath, "utf-8");
+let cachedDemoPrices: PriceHistoryPoint[] | null = null;
+
+function parseCsvRaw(raw: string): PriceHistoryPoint[] {
   const lines = raw.trim().split("\n");
   const header = lines[0].split(",");
   const dateIdx = header.indexOf("Date");
@@ -27,6 +28,24 @@ function parseCsvPrices(): PriceHistoryPoint[] {
     }
     return row as unknown as PriceHistoryPoint;
   });
+}
+
+/** Disk CSV when present (local dev); bundled JSON on Vercel/serverless. */
+function loadDemoPrices(): PriceHistoryPoint[] {
+  if (cachedDemoPrices) return cachedDemoPrices;
+
+  const csvPath = path.join(process.cwd(), "data", "sp500.csv");
+  try {
+    if (existsSync(csvPath)) {
+      cachedDemoPrices = parseCsvRaw(readFileSync(csvPath, "utf-8"));
+      return cachedDemoPrices;
+    }
+  } catch {
+    /* fall through to bundled series */
+  }
+
+  cachedDemoPrices = bundledDemoPrices as PriceHistoryPoint[];
+  return cachedDemoPrices;
 }
 
 function computeBenchmarkHistory(prices: PriceHistoryPoint[]): number[] {
@@ -82,7 +101,7 @@ function equalAllocation(): AllocationWeights {
 }
 
 export function buildDemoDashboardData(): DashboardData {
-  const price_history = parseCsvPrices();
+  const price_history = loadDemoPrices();
   const agent_history = computeDemoAgentHistory(price_history);
   const benchmark_history = computeBenchmarkHistory(price_history);
 

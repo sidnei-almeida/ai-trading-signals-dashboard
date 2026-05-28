@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getDashboardData } from "@/lib/api-server";
-import {
-  buildStooqDashboardData,
-  MARKET_DATA_MISSING_MESSAGE,
-} from "@/lib/stooq-dashboard";
+import { buildDemoDashboardData } from "@/lib/demo-fallback";
+import { buildStooqDashboardData } from "@/lib/stooq-dashboard";
 import type { DashboardDataEnvelope } from "@/types/rl-trading";
 
 export async function GET() {
@@ -22,7 +20,15 @@ export async function GET() {
   }
 
   try {
-    const data = await getDashboardData();
+    const data = await Promise.race([
+      getDashboardData(),
+      new Promise<never>((_, reject) => {
+        setTimeout(
+          () => reject(new Error("FinSight API timeout (cold start?)")),
+          12_000,
+        );
+      }),
+    ]);
     const envelope: DashboardDataEnvelope = {
       data,
       isLive: true,
@@ -31,15 +37,16 @@ export async function GET() {
     };
     return NextResponse.json(envelope);
   } catch (error) {
-    console.warn("[dashboard-data] FinSight unavailable:", error);
+    console.warn("[dashboard-data] FinSight unavailable, using bundled demo:", error);
     const envelope: DashboardDataEnvelope = {
-      data: null,
+      data: buildDemoDashboardData(),
       isLive: false,
       source: "demo_fallback",
       fetchedAt,
-      error: MARKET_DATA_MISSING_MESSAGE,
+      error:
+        "Live market API unavailable. Showing bundled S&P 500 demo curves (not live PPO).",
     };
-    return NextResponse.json(envelope, { status: 404 });
+    return NextResponse.json(envelope);
   }
 }
 

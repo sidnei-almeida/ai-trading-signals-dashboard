@@ -115,14 +115,14 @@ export const useDashboardStore = create<DashboardState>()(
           if (!dashboard?.data) {
             return { dashboard };
           }
+          const snapshot = snapshotFromEnvelope(dashboard);
           const shouldCapture =
-            dashboard.source === "stooq_historical" &&
-            dashboard.data.agent_history.length > 1 &&
+            snapshot != null &&
             (s.liveReplayPoints.length === 0 || !s.replayActive);
           return {
             dashboard,
             historicalChart: shouldCapture
-              ? (snapshotFromEnvelope(dashboard) ?? s.historicalChart)
+              ? snapshot
               : s.historicalChart,
           };
         }),

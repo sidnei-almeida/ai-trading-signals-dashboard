@@ -43,11 +43,6 @@ export const metadata: Metadata = {
   applicationName: "RL Portfolio Ops",
   authors: [{ name: "RL Portfolio Ops" }],
   creator: "RL Portfolio Ops",
-  icons: {
-    icon: [{ url: "/brand/logo-mark.svg", type: "image/svg+xml" }],
-    shortcut: "/brand/logo-mark.svg",
-    apple: [{ url: "/brand/logo-mark.svg", type: "image/svg+xml" }],
-  },
   manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
