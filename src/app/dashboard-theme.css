@@ -1,0 +1,913 @@
+/* RL Portfolio Allocation Dashboard — global visual theme */
+
+:root {
+  --noir: #111a19;
+  --noir-2: #1a2826;
+  --noir-3: #223330;
+  --emerald: #284139;
+  --emerald-2: #2f4d44;
+  --wasabi: #809076;
+  --wasabi-dim: #5a6b5e;
+  --khaki: #f8d794;
+  --khaki-dim: #c9ac71;
+  --earth: #b96b30;
+  --earth-dim: #8f4f20;
+  --positive: #4ade80;
+  --negative: #f87171;
+  --neutral: #94a3b8;
+  --warning: #b96b30;
+  --info: #f8d794;
+  --dash-border: rgba(128, 144, 118, 0.12);
+  --dash-border-strong: rgba(128, 144, 118, 0.15);
+  --chart-grid: rgba(128, 144, 118, 0.08);
+  --chart-axis: #5a6b5e;
+  --chart-tooltip-bg: #1a2826;
+  --chart-tooltip-border: rgba(128, 144, 118, 0.15);
+}
+
+.dark {
+  --background: var(--noir);
+  --foreground: var(--khaki);
+  --card: var(--noir-2);
+  --card-foreground: var(--khaki);
+  --popover: var(--noir-2);
+  --popover-foreground: var(--khaki);
+  --primary: var(--earth);
+  --primary-foreground: #fff8ee;
+  --secondary: var(--emerald);
+  --secondary-foreground: var(--khaki);
+  --muted: var(--noir-3);
+  --muted-foreground: var(--wasabi-dim);
+  --accent: var(--emerald);
+  --accent-foreground: var(--khaki);
+  --destructive: var(--negative);
+  --border: var(--dash-border);
+  --input: rgba(128, 144, 118, 0.2);
+  --ring: var(--wasabi-dim);
+}
+
+/* —— App shell —— */
+.dashboard-app {
+  background: var(--noir);
+  color: var(--wasabi);
+  font-family: var(--font-sora), var(--font-sans), sans-serif;
+}
+
+.dashboard-app .font-mono,
+.dashboard-app [class*="font-mono"],
+.dashboard-app code,
+.dashboard-app pre {
+  font-family: var(--font-ibm-plex-mono), var(--font-mono), monospace;
+}
+
+.dashboard-app ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.dashboard-app ::-webkit-scrollbar-track {
+  background: var(--noir);
+}
+
+.dashboard-app ::-webkit-scrollbar-thumb {
+  background: var(--emerald-2);
+  border-radius: 2px;
+}
+
+.dashboard-app ::-webkit-scrollbar-thumb:hover {
+  background: var(--wasabi-dim);
+}
+
+/* —— Tailwind zinc/semantic remaps (styling only) —— */
+.dashboard-app .text-zinc-50,
+.dashboard-app .text-zinc-100,
+.dashboard-app .text-zinc-200,
+.dashboard-app .text-zinc-300 {
+  color: var(--khaki);
+}
+
+.dashboard-app .text-zinc-400 {
+  color: var(--wasabi);
+}
+
+.dashboard-app .text-zinc-500,
+.dashboard-app .text-zinc-600 {
+  color: var(--wasabi-dim);
+}
+
+.dashboard-app .text-emerald-300,
+.dashboard-app .text-emerald-400,
+.dashboard-app .text-emerald-500,
+.dashboard-app .text-teal-400,
+.dashboard-app .text-teal-400\/95 {
+  color: var(--positive);
+}
+
+.dashboard-app .text-red-300,
+.dashboard-app .text-red-400,
+.dashboard-app .text-orange-400 {
+  color: var(--negative);
+}
+
+.dashboard-app .text-amber-300,
+.dashboard-app .text-amber-400,
+.dashboard-app .text-amber-400\/90,
+.dashboard-app .text-amber-400\/95,
+.dashboard-app .text-orange-400\/95 {
+  color: var(--earth);
+}
+
+.dashboard-app [class*="border-zinc-"],
+.dashboard-app [class*="border-zinc-"] {
+  border-color: var(--dash-border);
+}
+
+.dashboard-app [class*="bg-zinc-950"],
+.dashboard-app [class*="bg-\\[\\#11151a\\]"],
+.dashboard-app [class*="bg-\\[\\#0d1014\\]"] {
+  background-color: var(--noir-2);
+}
+
+.dashboard-app [class*="bg-zinc-900"]:not([class*="hover:"]):not([class*="/"]) {
+  background-color: var(--noir-3);
+}
+
+/* Do NOT wildcard-match hover:bg-zinc-800/20 — it was painting cards emerald */
+
+/* —— Card / panel backgrounds (fixed hierarchy) —— */
+.dashboard-app .dash-panel,
+.dashboard-app .kpi-card,
+.dashboard-app .dash-kpi,
+.dashboard-app .data-source-panel {
+  background: #1a2826 !important;
+  border: 1px solid rgba(128, 144, 118, 0.12) !important;
+}
+
+.dashboard-app .dash-metric-cell,
+.dashboard-app .dash-signal-card,
+.dashboard-app .dash-signal-card.is-reduce {
+  background: #223330 !important;
+  border: 1px solid rgba(248, 113, 113, 0.2) !important;
+}
+
+.dashboard-app .dash-signal-card.is-rebalance {
+  background: #223330 !important;
+  border: 1px solid rgba(74, 222, 128, 0.2) !important;
+}
+
+/* —— Panel —— */
+.dashboard-app .dash-panel {
+  border-radius: 10px;
+}
+
+.dashboard-app .dash-panel-header {
+  border-bottom: 1px solid rgba(128, 144, 118, 0.1);
+  padding: 10px 16px;
+}
+
+.dashboard-app .dash-panel-title {
+  font-family: var(--font-sora), sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #809076 !important;
+}
+
+.dashboard-app .dash-panel-subtitle {
+  margin-top: 2px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--wasabi-dim);
+}
+
+.dashboard-app .dash-panel-body {
+  padding: 16px;
+}
+
+/* —— KPI cards —— */
+.dashboard-app .dash-kpi,
+.dashboard-app .kpi-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.dashboard-app .dash-kpi.accent::before,
+.dashboard-app .kpi-card.accent::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: #b96b30;
+}
+
+.dashboard-app .dash-kpi-label,
+.dashboard-app .kpi-label {
+  margin-bottom: 6px;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5a6b5e;
+  white-space: nowrap;
+}
+
+.dashboard-app .dash-kpi-value,
+.dashboard-app .kpi-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  color: #f8d794;
+}
+
+.dashboard-app .dash-kpi-value.is-positive,
+.dashboard-app .kpi-value.positive {
+  color: #4ade80;
+}
+
+.dashboard-app .dash-kpi-value.is-negative,
+.dashboard-app .kpi-value.negative {
+  color: #f87171;
+}
+
+.dashboard-app .dash-kpi-value.is-warning,
+.dashboard-app .kpi-value.warning {
+  color: #b96b30;
+}
+
+.dashboard-app .dash-kpi-value.is-muted,
+.dashboard-app .kpi-value.neutral {
+  color: #809076;
+}
+
+.dashboard-app .kpi-value.data-source {
+  font-size: 14px;
+}
+
+/* —— Topbar —— */
+.dashboard-app .dash-topbar {
+  flex-shrink: 0;
+  background: #0e1917;
+  border-bottom: 1px solid rgba(128, 144, 118, 0.15);
+}
+
+.dashboard-app .topbar-main {
+  display: flex;
+  height: 56px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+}
+
+.dashboard-app .topbar-brand {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-app .topbar-brand-text {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.dashboard-app .dash-topbar-title {
+  display: block;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #f8d794;
+}
+
+.dashboard-app .dash-topbar-subtitle {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.25;
+  color: #5a6b5e;
+}
+
+.dashboard-app .topbar-nav-tabs {
+  display: none;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+@media (min-width: 1280px) {
+  .dashboard-app .topbar-nav-tabs {
+    display: flex;
+  }
+}
+
+.dashboard-app .nav-tab {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid rgba(128, 144, 118, 0.2);
+  background: transparent;
+  color: #5a6b5e;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.dashboard-app .nav-tab.active {
+  background: #284139;
+  border-color: rgba(248, 215, 148, 0.2);
+  color: #f8d794;
+}
+
+.dashboard-app .topbar-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.dashboard-app .status-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 0 24px 8px;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  color: #5a6b5e;
+}
+
+.dashboard-app .status-line .label {
+  margin-right: 4px;
+  color: #5a6b5e;
+}
+
+.dashboard-app .status-line .value {
+  font-weight: 500;
+  color: #809076;
+}
+
+.dashboard-app .status-line .value.active {
+  color: #f8d794;
+}
+
+.dashboard-app .status-line .value.stopped {
+  color: #b96b30;
+}
+
+.dashboard-app .mode-group {
+  display: flex;
+  gap: 2px;
+  border-radius: 8px;
+  border: 1px solid rgba(128, 144, 118, 0.15);
+  background: #1a2826;
+  padding: 3px;
+}
+
+.dashboard-app .mode-btn {
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  padding: 5px 12px;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #5a6b5e;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dashboard-app .mode-btn:hover {
+  color: #809076;
+}
+
+.dashboard-app .mode-btn.active {
+  background: #284139;
+  color: #f8d794;
+  box-shadow: inset 0 0 0 1px rgba(248, 215, 148, 0.15);
+}
+
+.dashboard-app .btn-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 7px;
+  background: #b96b30;
+  padding: 7px 16px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #fff8ee;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dashboard-app .btn-start:hover:not(:disabled) {
+  background: #d07838;
+}
+
+.dashboard-app .btn-start:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dashboard-app .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(128, 144, 118, 0.2);
+  border-radius: 7px;
+  background: transparent;
+  padding: 6px 14px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #809076;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dashboard-app .btn-secondary:hover:not(:disabled) {
+  border-color: #809076;
+  color: #f8d794;
+}
+
+.dashboard-app .btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dashboard-app .btn-emergency {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(185, 107, 48, 0.35);
+  border-radius: 7px;
+  background: transparent;
+  padding: 6px 14px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #b96b30;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dashboard-app .btn-emergency:hover:not(:disabled) {
+  border-color: #b96b30;
+  background: rgba(185, 107, 48, 0.08);
+}
+
+.dashboard-app .dash-range-btn {
+  height: 24px;
+  border-radius: 5px;
+  padding: 0 8px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--wasabi-dim);
+  background: transparent;
+  border: none;
+}
+
+.dashboard-app .dash-range-btn.is-active {
+  background: var(--emerald);
+  color: var(--khaki);
+}
+
+/* —— Tables —— */
+.dashboard-app table thead th,
+.dashboard-app thead th,
+.dashboard-app [data-slot="table-head"],
+.dashboard-app .dashboard-table-compact [data-slot="table-head"] {
+  height: auto;
+  padding-bottom: 8px !important;
+  background: transparent !important;
+  font-family: var(--font-ibm-plex-mono), monospace !important;
+  font-size: 9px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #5a6b5e !important;
+  border-bottom: 1px solid rgba(128, 144, 118, 0.15) !important;
+}
+
+.dashboard-app [data-slot="table-header"] {
+  background: transparent !important;
+}
+
+.dashboard-app table a,
+.dashboard-app thead a,
+.dashboard-app [data-slot="table-head"] a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.dashboard-app [data-slot="table-row"]:hover {
+  background-color: #223330 !important;
+}
+
+.dashboard-app .dashboard-table-compact [data-slot="table"] {
+  background: transparent;
+}
+
+.dashboard-app .dashboard-table-compact [data-slot="table-head"] {
+  height: 32px;
+}
+
+.dashboard-app .dashboard-table-compact [data-slot="table-cell"] {
+  padding: 6px 8px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--wasabi);
+  border-bottom: 1px solid rgba(128, 144, 118, 0.07);
+}
+
+.dashboard-app .dashboard-table-compact [data-slot="table-row"]:hover {
+  background: var(--noir-3);
+}
+
+.dashboard-app .dash-ticker {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--khaki);
+}
+
+.dashboard-app .dash-metric-value {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--khaki);
+}
+
+.dashboard-app .dash-timestamp {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--wasabi-dim);
+}
+
+/* —— Signal engine —— */
+.dashboard-app .dash-signal-card {
+  border-radius: 8px;
+  border: 1px solid rgba(185, 107, 48, 0.2);
+  background: rgba(185, 107, 48, 0.08);
+}
+
+.dashboard-app .dash-signal-card.is-reduce {
+  border-color: rgba(248, 113, 113, 0.2);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.dashboard-app .dash-signal-card.is-rebalance {
+  border-color: rgba(74, 222, 128, 0.2);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.dashboard-app .dash-signal-title {
+  font-family: var(--font-sora), sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--earth);
+}
+
+.dashboard-app .dash-metric-cell {
+  border-radius: 8px;
+  border: 1px solid rgba(128, 144, 118, 0.12);
+  background: rgba(17, 26, 25, 0.35);
+  padding: 8px 10px;
+}
+
+.dashboard-app .dash-metric-label {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wasabi-dim);
+}
+
+/* —— Progress bars —— */
+.dashboard-app [data-slot="progress"] {
+  background: var(--noir-3);
+}
+
+.dashboard-app [data-slot="progress-indicator"] {
+  background: var(--earth);
+}
+
+/* —— Page section titles (settings etc.) —— */
+.dashboard-app .dash-page-title {
+  font-family: var(--font-sora), sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--khaki);
+}
+
+.dashboard-app .dash-page-subtitle {
+  font-family: var(--font-sora), sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--wasabi-dim);
+}
+
+/* —— Status / signal badges in tables —— */
+.dashboard-app [data-slot="badge"] {
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 5px;
+}
+
+/* —— Signal breakdown —— */
+.dashboard-app .signal-pill {
+  border-radius: 7px;
+  padding: 6px 14px;
+  text-align: center;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dashboard-app .signal-pill.buy {
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  background: rgba(74, 222, 128, 0.08);
+  color: #4ade80;
+}
+
+.dashboard-app .signal-pill.hold {
+  border: 1px solid rgba(128, 144, 118, 0.2);
+  background: rgba(128, 144, 118, 0.08);
+  color: #809076;
+}
+
+.dashboard-app .signal-pill.sell {
+  border: 1px solid rgba(185, 107, 48, 0.25);
+  background: rgba(185, 107, 48, 0.08);
+  color: #b96b30;
+}
+
+.dashboard-app .signal-pill .count {
+  display: block;
+  margin-top: 2px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.dashboard-app .delta-bar-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 2px;
+  background: rgba(128, 144, 118, 0.1);
+  overflow: hidden;
+}
+
+.dashboard-app .delta-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: #b96b30;
+}
+
+.dashboard-app .delta-bar-fill.positive {
+  background: #4ade80;
+}
+
+.dashboard-app .delta-label {
+  min-width: 44px;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.dashboard-app .delta-value {
+  min-width: 48px;
+  text-align: right;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 10px;
+  color: #b96b30;
+}
+
+.dashboard-app .delta-value.positive {
+  color: #4ade80;
+}
+
+.dashboard-app .delta-signal {
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  color: #5a6b5e;
+}
+
+/* —— Data source status —— */
+.dashboard-app .data-source-panel {
+  margin-top: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(128, 144, 118, 0.12);
+  background: #1a2826;
+  padding: 14px 20px;
+}
+
+.dashboard-app .data-source-title {
+  margin-bottom: 10px;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5a6b5e;
+}
+
+.dashboard-app .data-source-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 1023px) {
+  .dashboard-app .data-source-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.dashboard-app .ds-col-label {
+  margin-bottom: 3px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  color: #5a6b5e;
+}
+
+.dashboard-app .ds-col-value {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: #f8d794;
+}
+
+.dashboard-app .ds-col-value.positive {
+  color: #4ade80;
+}
+
+.dashboard-app .ds-col-value.muted {
+  color: #809076;
+}
+
+.dashboard-app .data-source-note {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(128, 144, 118, 0.1);
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: #5a6b5e;
+}
+
+/* —— Market summary —— */
+.dashboard-app .market-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(128, 144, 118, 0.07);
+  font-size: 11px;
+}
+
+.dashboard-app .market-summary-row:last-child {
+  border-bottom: none;
+}
+
+.dashboard-app .ms-label {
+  font-family: var(--font-sora), sans-serif;
+  color: #5a6b5e;
+}
+
+.dashboard-app .ms-value {
+  text-align: right;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dashboard-app .ms-value.positive {
+  color: #4ade80;
+}
+
+.dashboard-app .ms-value.negative {
+  color: #f87171;
+}
+
+.dashboard-app .ms-value.neutral {
+  color: #f8d794;
+}
+
+.dashboard-app .ms-value.muted {
+  color: #809076;
+}
+
+.dashboard-app .ms-summary-line {
+  margin-top: 10px;
+  font-family: var(--font-sora), sans-serif;
+  font-size: 10px;
+  color: #5a6b5e;
+}
+
+.dashboard-app .ms-summary-line strong {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-weight: 500;
+  color: #b96b30;
+}
+
+/* —— Table body cell tones (utility classes) —— */
+.dashboard-app .ticker-cell {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-weight: 500;
+  color: #f8d794;
+}
+
+.dashboard-app .price-cell {
+  font-family: var(--font-ibm-plex-mono), monospace;
+  color: #f8d794;
+}
+
+.dashboard-app .change-positive,
+.dashboard-app .delta-positive,
+.dashboard-app .trend-up {
+  color: #4ade80;
+}
+
+.dashboard-app .change-negative,
+.dashboard-app .delta-negative,
+.dashboard-app .trend-down {
+  color: #f87171;
+}
+
+.dashboard-app .trend-flat,
+.dashboard-app .current-weight {
+  color: #809076;
+}
+
+.dashboard-app .target-weight {
+  color: #b96b30;
+}
+
+.dashboard-app .signal-hold {
+  color: #809076;
+  background: rgba(128, 144, 118, 0.1);
+}
+
+.dashboard-app .signal-sell {
+  color: #b96b30;
+  background: rgba(185, 107, 48, 0.1);
+  border: 1px solid rgba(185, 107, 48, 0.2);
+}
+
+.dashboard-app .signal-buy {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+/* Prevent blue inheritance on headings inside dashboard */
+.dashboard-app h1,
+.dashboard-app h2,
+.dashboard-app h3,
+.dashboard-app h4,
+.dashboard-app h5,
+.dashboard-app h6 {
+  color: inherit;
+}
+
+.dashboard-app main {
+  background: #111a19;
+}
