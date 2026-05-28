@@ -8,7 +8,7 @@ import type { DashboardDataEnvelope } from "@/types/rl-trading";
 export async function GET() {
   const fetchedAt = new Date().toISOString();
 
-  const stooq = buildStooqDashboardData();
+  const stooq = await buildStooqDashboardData();
   if (stooq) {
     const envelope: DashboardDataEnvelope = {
       data: stooq,
@@ -39,7 +39,7 @@ export async function GET() {
   } catch (error) {
     console.warn("[dashboard-data] FinSight unavailable, using bundled demo:", error);
     const envelope: DashboardDataEnvelope = {
-      data: buildDemoDashboardData(),
+      data: await buildDemoDashboardData(),
       isLive: false,
       source: "demo_fallback",
       fetchedAt,

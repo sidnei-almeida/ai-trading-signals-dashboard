@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 
-import bundledDemoPrices from "@/lib/demo-sp500-prices.json";
 import { INITIAL_BALANCE, RL_TICKERS, TRANSACTION_COST } from "@/lib/constants";
+import { fetchRemoteSp500Prices } from "@/lib/remote-data";
+import { parseSp500CsvRaw } from "@/lib/sp500-csv";
 import type {
   AllocationWeights,
   DashboardData,
@@ -12,39 +13,20 @@ import type {
 
 let cachedDemoPrices: PriceHistoryPoint[] | null = null;
 
-function parseCsvRaw(raw: string): PriceHistoryPoint[] {
-  const lines = raw.trim().split("\n");
-  const header = lines[0].split(",");
-  const dateIdx = header.indexOf("Date");
-
-  return lines.slice(1).map((line) => {
-    const cols = line.split(",");
-    const row: Record<string, string | number> = {
-      Date: cols[dateIdx],
-    };
-    for (const ticker of RL_TICKERS) {
-      const idx = header.indexOf(ticker);
-      row[ticker] = Number.parseFloat(cols[idx]);
-    }
-    return row as unknown as PriceHistoryPoint;
-  });
-}
-
-/** Disk CSV when present (local dev); bundled JSON on Vercel/serverless. */
-function loadDemoPrices(): PriceHistoryPoint[] {
+async function loadDemoPrices(): Promise<PriceHistoryPoint[]> {
   if (cachedDemoPrices) return cachedDemoPrices;
 
   const csvPath = path.join(process.cwd(), "data", "sp500.csv");
   try {
     if (existsSync(csvPath)) {
-      cachedDemoPrices = parseCsvRaw(readFileSync(csvPath, "utf-8"));
+      cachedDemoPrices = parseSp500CsvRaw(readFileSync(csvPath, "utf-8"));
       return cachedDemoPrices;
     }
   } catch {
-    /* fall through to bundled series */
+    /* try remote */
   }
 
-  cachedDemoPrices = bundledDemoPrices as PriceHistoryPoint[];
+  cachedDemoPrices = await fetchRemoteSp500Prices();
   return cachedDemoPrices;
 }
 
@@ -100,8 +82,8 @@ function equalAllocation(): AllocationWeights {
   };
 }
 
-export function buildDemoDashboardData(): DashboardData {
-  const price_history = loadDemoPrices();
+export async function buildDemoDashboardData(): Promise<DashboardData> {
+  const price_history = await loadDemoPrices();
   const agent_history = computeDemoAgentHistory(price_history);
   const benchmark_history = computeBenchmarkHistory(price_history);
 

@@ -63,7 +63,7 @@ export async function fetchFinsightDashboard(baseUrl?: string): Promise<{
     getExchangeStatus(baseUrl),
   ]);
 
-  const demo = buildDemoDashboardData();
+  const demo = await buildDemoDashboardData();
   const dataSource = resolveDataSource(exchange);
 
   let agent_history = demo.agent_history;

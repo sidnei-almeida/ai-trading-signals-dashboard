@@ -1,20 +1,17 @@
 import { INITIAL_BALANCE, TRANSACTION_COST } from "@/lib/constants";
-import {
-  loadMarketDataFromDisk,
-  marketPricesFileExists,
-} from "@/lib/market-csv";
+import { loadMarketData, marketPricesFileExists } from "@/lib/market-csv";
 import { simulateStaticHistory } from "@/lib/stooq-replay";
 import type { DashboardData } from "@/types/rl-trading";
 
 export const MARKET_DATA_MISSING_MESSAGE =
   "Historical market data not found. Run npm run data:stooq.";
 
-export { marketPricesFileExists, loadMarketDataFromDisk };
+export { marketPricesFileExists, loadMarketData };
 
-export function buildStooqDashboardData(
+export async function buildStooqDashboardData(
   startingCash = INITIAL_BALANCE,
-): DashboardData | null {
-  const { rows } = loadMarketDataFromDisk();
+): Promise<DashboardData | null> {
+  const { rows } = await loadMarketData();
   if (rows.length === 0) return null;
 
   const simulated = simulateStaticHistory(rows, startingCash);

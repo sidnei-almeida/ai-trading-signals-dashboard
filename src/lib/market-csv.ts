@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "fs";
 import path from "path";
 
 import { RL_TICKERS } from "@/lib/constants";
+import { fetchRemoteSp500Prices } from "@/lib/remote-data";
 import type { PriceHistoryPoint, Ticker } from "@/types/rl-trading";
 
 export const MARKET_DIR = path.join(process.cwd(), "data", "market");
@@ -156,6 +157,64 @@ export function loadMarketDataFromDisk(): MarketDataPayload {
     tickers: [...RL_TICKERS],
     rows: parseCombinedPricesCsv(raw),
   };
+}
+
+/** Wide sp500.csv (close-only) → rows for Stooq replay (synthetic OHLCV). */
+export function sp500PricesToMarketRows(
+  prices: PriceHistoryPoint[],
+): MarketDataRow[] {
+  return prices.map((row) => {
+    const pricesMap = {
+      AAPL: row.AAPL,
+      MSFT: row.MSFT,
+      GOOGL: row.GOOGL,
+      AMZN: row.AMZN,
+      NVDA: row.NVDA,
+    };
+    const ohlcv = {} as Record<Ticker, OhlcvBar>;
+    for (const ticker of RL_TICKERS) {
+      const close = pricesMap[ticker];
+      ohlcv[ticker] = {
+        open: close,
+        high: close,
+        low: close,
+        close,
+        volume: 0,
+      };
+    }
+    return { date: row.Date, prices: pricesMap, ohlcv };
+  });
+}
+
+/**
+ * Local `data/market/prices.csv` when present; otherwise sp500.csv from GitHub
+ * (`MARKET_DATA_SP500_CSV_URL` / deep-rl-trading-agent data_fallback).
+ */
+export async function loadMarketData(): Promise<MarketDataPayload> {
+  const disk = loadMarketDataFromDisk();
+  if (disk.rows.length > 0) return disk;
+
+  try {
+    const prices = await fetchRemoteSp500Prices();
+    const rows = sp500PricesToMarketRows(prices);
+    return {
+      source: "GitHub sp500.csv (data_fallback)",
+      tickers: [...RL_TICKERS],
+      rows,
+    };
+  } catch (error) {
+    console.warn("[market-data] Remote sp500.csv unavailable:", error);
+    return {
+      source: "Stooq historical CSV",
+      tickers: [...RL_TICKERS],
+      rows: [],
+    };
+  }
+}
+
+export async function hasMarketData(): Promise<boolean> {
+  const payload = await loadMarketData();
+  return payload.rows.length > 0;
 }
 
 export function marketRowsToPriceHistory(rows: MarketDataRow[]): PriceHistoryPoint[] {
