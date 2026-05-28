@@ -1,40 +1,296 @@
-# RL Portfolio Allocation Dashboard
+<p align="center">
+  <img src="./images/header.png" alt="RL Portfolio Allocation Dashboard" width="920" />
+</p>
 
-PPO-based portfolio allocation, historical market replay, and paper-trading simulation.
+<h1 align="center">RL Portfolio Allocation Dashboard</h1>
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center">
+  <strong>Next.js · TypeScript · Tailwind · Recharts · PPO / ONNX · Paper trading</strong><br />
+  <em>Research dashboard for PPO-based portfolio allocation, historical market replay, and simulated execution.</em>
+</p>
 
-## Getting Started
+<p align="center">
+  <a href="https://github.com/sidnei-almeida/ai-trading-signals-dashboard"><strong>View on GitHub</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://groq-finance-inference.onrender.com/docs">FinSight API (OpenAPI)</a>
+</p>
 
-First, run the development server:
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Recharts-3-E6522C?logo=apache&logoColor=white" alt="Recharts" />
+  <img src="https://img.shields.io/badge/Zustand-State-764ABC?logo=redux&logoColor=white" alt="Zustand" />
+  <img src="https://img.shields.io/badge/PPO-Policy-284139" alt="PPO Policy" />
+  <img src="https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white" alt="Vercel" />
+</p>
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## What this is
+
+A **dark, operations-style dashboard** for reinforcement-learning portfolio allocation research. It surfaces PPO target weights, mode-adjusted guardrails, historical equity replay, and a full **paper-trading control plane** — without claiming live brokerage connectivity.
+
+The UI loads market and policy data through **Next.js BFF routes** (`/api/*`). It prefers **local Stooq historical CSV** when available, otherwise calls the remote **FinSight** inference API, with a structured demo fallback when both are unavailable.
+
+> **Default inference API:** `https://groq-finance-inference.onrender.com` — ONNX PPO policy for a fixed **S&amp;P 500 tech basket** (AAPL, MSFT, GOOGL, AMZN, NVDA).
+
+---
+
+## Pages & workflow
+
+| Route | Purpose |
+|-------|---------|
+| **Overview** `/` | KPI strip, portfolio performance vs buy &amp; hold, AI signal engine, exposure, market watch, guardrails, execution queue, activity feed |
+| **Portfolio** `/portfolio` | Analytics KPIs, performance / drawdown / return distribution, holdings, correlation heatmap, contribution breakdown |
+| **Policy Inference** `/policy` | Model metadata, observation snapshot, PPO output, inference diagnostics |
+| **Risk Controls** `/risk` | Guardrail status, exposure, rebalance risk review, blocked legs, limit utilization, simulated queue |
+| **Market Watch** `/watch` | KPI strip, price table &amp; trends, signal breakdown, data-source status |
+| **Settings** `/settings` | Operating mode, guardrails, API &amp; session, replay, agent runtime, safety &amp; reset |
+
+```mermaid
+flowchart LR
+  USER[Operator]
+  UI[Next.js Dashboard]
+  BFF["/api/* BFF"]
+  STOOQ[(Stooq CSV)]
+  API[FinSight API]
+  STORE[Zustand session]
+
+  USER --> UI
+  UI --> STORE
+  UI --> BFF
+  BFF --> STOOQ
+  BFF --> API
+  API --> BFF --> UI
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Main features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Overview & session control
 
-## Learn More
+- **KPI strip** — net worth, daily P/L, open positions, AI signal, confidence, sentiment, risk exposure, operating mode
+- **Portfolio performance** — agent equity vs buy &amp; hold; live replay overlay; 30d / 90d / all ranges
+- **AI Signal Engine** — mode-adjusted signal, agent persona, confidence bar, regime, thesis
+- **Top bar controls** — start / pause / reset / rebalance simulation / emergency stop
+- **Operating modes** — Conservative · Balanced · Aggressive (guardrails + rebalance intensity)
 
-To learn more about Next.js, take a look at the following resources:
+### Portfolio analytics
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Drawdown and return-distribution charts
+- Per-asset exposure bars with shared color palette
+- Correlation heatmap and contribution breakdown
+- Holdings table with PPO targets and allocation deltas
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Policy & risk
+
+- **PPO policy output** — softmax weights, live vs demo inference indicator
+- **Observation snapshot** — vector fed to the policy (collapsible raw view)
+- **Guardrail monitoring** — utilization, blocked recommendations, rebalance step limits
+- **Simulated execution queue** — legs with guardrail column on Risk page
+
+### Market watch & replay
+
+- Normalized multi-asset price trend (replay cursor)
+- Signal breakdown (buy / hold / sell bias counts and deltas)
+- **Historical replay engine** — day-by-day paper session over Stooq `price_history`
+- Data-source strip (CSV loaded vs API vs fallback)
+
+### Settings & safety
+
+- Guardrail sliders synced to operating mode
+- Session reset, activity feed clear, guardrail restore, dashboard refresh
+- Developer diagnostics (collapsible)
+
+---
+
+## Design system
+
+Built for long monitoring sessions: low-glare **noir** base, **wasabi** secondary text, **khaki** primary values, **earth** accent for warnings and CTAs.
+
+| Element | Implementation |
+|---------|----------------|
+| **Typography** | [Sora](https://fonts.google.com/specimen/Sora) (UI) + [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) (tickers, metrics, tables) via `next/font` |
+| **Brand mark** | Emerald tile + layers glyph — `src/components/brand/brand-logo-mark.tsx`, favicon, web manifest |
+| **Cards** | `#1a2826` panels, `rgba(128,144,118,0.12)` borders, nested tiles `#223330` |
+| **Charts** | Per-asset palette (AAPL green · MSFT blue · GOOGL khaki · AMZN earth · NVDA purple); agent line `#4ade80` |
+| **Tables** | IBM Plex Mono headers `#5a6b5e`; khaki tickers; semantic positive / negative cells |
+| **Sidebar** | Collapsible nav groups (Main · Control · System); mode switcher; session status chip |
+
+Tokens and overrides live in `src/app/dashboard-theme.css`, `src/app/globals.css`, and `src/lib/chart-styles.ts`.
+
+---
+
+## Operating modes
+
+| Mode | Behavior (summary) |
+|------|---------------------|
+| **Conservative** | Lower exposure, slower rebalancing, higher cash reserve |
+| **Balanced** | Default guardrails and rebalance intensity |
+| **Aggressive** | Higher single-asset cap, faster reaction to PPO targets |
+
+Mode changes are logged in the **Signal &amp; Execution Feed** as simulated operator events.
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 + dashboard theme CSS |
+| UI primitives | shadcn / Radix |
+| Charts | Recharts 3 |
+| State | Zustand (persisted session) |
+| Icons | Lucide React |
+| Data | BFF routes + optional Stooq CSV + FinSight REST |
+
+---
+
+## Environment
+
+Copy `.env.example` to `.env.local`:
+
+```env
+# Production URL (Vercel) — Open Graph, manifest, canonical links
+# NEXT_PUBLIC_SITE_URL=https://your-app.vercel.app
+
+# FinSight / PPO inference API
+NEXT_PUBLIC_RL_TRADING_API_URL=https://groq-finance-inference.onrender.com
+
+# Stooq CSV download only (npm run data:stooq — server-side, never exposed to browser)
+# STOOQ_API_KEY=
+# STOOQ_START_DATE=20200101
+# STOOQ_END_DATE=20260527
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_SITE_URL` | Canonical URL on Vercel (recommended in production) |
+| `NEXT_PUBLIC_RL_TRADING_API_URL` | Remote PPO / health / predict API base |
+| `STOOQ_*` | Optional historical CSV ingest via `scripts/download-stooq-data.ts` |
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/sidnei-almeida/ai-trading-signals-dashboard.git
+cd ai-trading-signals-dashboard
+
+npm install
+cp .env.example .env.local
+
+# Optional: download Stooq historical prices into data/market/
+npm run data:stooq
+
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+> **Note:** Without local CSV, the first request to the FinSight API on Render may take **30–60 seconds** if the service has slept. The dashboard falls back to demo data if the API is unreachable.
+
+### Production build
+
+```bash
+npm run build
+npm start
+```
+
+---
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Import this repository on [Vercel](https://vercel.com).
+2. Framework preset: **Next.js** (default).
+3. Recommended environment variables:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   | Variable | Example |
+   |----------|---------|
+   | `NEXT_PUBLIC_SITE_URL` | `https://your-app.vercel.app` |
+   | `NEXT_PUBLIC_RL_TRADING_API_URL` | `https://groq-finance-inference.onrender.com` |
+
+4. Deploy.
+
+Favicon, Apple touch icon, `site.webmanifest`, and Open Graph image are generated from `src/app/icon.svg`, `src/app/apple-icon.svg`, and `src/app/opengraph-image.tsx`.
+
+---
+
+## Repository structure
+
+```
+ai-trading-signals-dashboard/
+├── public/
+│   ├── brand/logo-mark.svg       # Brand mark (favicon source)
+│   └── site.webmanifest
+├── images/
+│   └── header.png                # README hero banner
+├── data/market/
+│   └── prices.csv                # Stooq ingest output (gitignored if large)
+├── scripts/
+│   └── download-stooq-data.ts
+├── src/
+│   ├── app/
+│   │   ├── (dashboard)/          # Overview, Portfolio, Policy, Risk, Watch, Settings
+│   │   ├── api/                  # BFF: dashboard-data, health, predict, market-data
+│   │   ├── icon.svg · apple-icon.svg · opengraph-image.tsx
+│   │   └── layout.tsx
+│   ├── components/
+│   │   ├── brand/                # BrandLogoMark
+│   │   ├── charts/               # Performance, drawdown, allocation, …
+│   │   ├── dashboard/            # Shared panels (KPI, signal engine, queue, …)
+│   │   ├── layout/               # Sidebar, topbar, shell
+│   │   ├── market-watch/ · portfolio/ · policy/ · risk/ · settings/
+│   │   └── ui/                   # shadcn primitives
+│   ├── hooks/                    # Bootstrap, replay, market watch, analytics
+│   ├── lib/                      # API clients, metrics, replay, operating modes
+│   ├── store/                    # Zustand dashboard store
+│   └── types/rl-trading.ts
+├── readme_model.md               # README style reference
+├── .env.example
+└── package.json
+```
+
+---
+
+## API surface (BFF)
+
+The browser calls same-origin routes; server code proxies to FinSight or local CSV.
+
+| Route | Role |
+|-------|------|
+| `GET /api/dashboard-data` | Portfolio series, allocations, history (Stooq → API → demo) |
+| `GET /api/health` | Model / API availability |
+| `POST /api/predict` | PPO inference for current observation |
+| `GET /api/market-data` | Local CSV prices for Market Watch |
+
+Upstream contract (when using FinSight): health, predict, and dashboard payloads as documented on the inference service.
+
+---
+
+## Data sources
+
+| Source | When used |
+|--------|-----------|
+| **Stooq CSV** | `data/market/prices.csv` after `npm run data:stooq` — full historical replay |
+| **FinSight API** | Live PPO weights and dashboard envelope |
+| **Demo fallback** | Offline development when API and CSV are missing |
+
+Universe: **AAPL · MSFT · GOOGL · AMZN · NVDA** (see `src/lib/constants.ts`).
+
+---
+
+## Disclaimer
+
+This project is a **research and paper-trading demonstration**. PPO outputs, simulated rebalances, and dashboard signals are **not investment advice** and do not constitute live trading instructions. Always validate models, data, and guardrails before any real capital deployment.
+
+---
+
+## Author
+
+**Sidnei Alves de Almeida** — [@sidnei-almeida](https://github.com/sidnei-almeida)

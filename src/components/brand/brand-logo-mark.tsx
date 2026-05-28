@@ -1,0 +1,56 @@
+import { cn } from "@/lib/utils";
+
+/** Sidebar mark: emerald tile + khaki inset frame + layers glyph */
+export function BrandLogoMark({
+  className,
+  size = 32,
+  title = "RL Portfolio Ops",
+}: {
+  className?: string;
+  size?: number;
+  title?: string;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 32 32"
+      width={size}
+      height={size}
+      className={cn("shrink-0", className)}
+      role="img"
+      aria-label={title}
+    >
+      <title>{title}</title>
+      <rect
+        width="32"
+        height="32"
+        rx="8"
+        fill="#284139"
+        stroke="rgba(248, 215, 148, 0.2)"
+        strokeWidth="1"
+      />
+      <rect
+        x="4"
+        y="4"
+        width="24"
+        height="24"
+        rx="4"
+        fill="none"
+        stroke="rgba(248, 215, 148, 0.12)"
+        strokeWidth="1"
+      />
+      <g
+        transform="translate(8 8) scale(0.666667)"
+        fill="none"
+        stroke="#f8d794"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+        <path d="m22 12-8.6 3.91a2 2 0 0 1-1.65 0L2 12" />
+        <path d="m22 17-8.6 3.91a2 2 0 0 1-1.65 0L2 17" />
+      </g>
+    </svg>
+  );
+}

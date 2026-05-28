@@ -9,12 +9,12 @@ import {
   ChevronLeft,
   LayoutDashboard,
   LineChart,
-  Layers,
   Shield,
   SlidersHorizontal,
   Settings,
 } from "lucide-react";
 
+import { BrandLogoMark } from "@/components/brand/brand-logo-mark";
 import { getOperatingModeConfig, STRATEGY_MODE_ORDER } from "@/lib/operating-modes";
 import { useDashboardStore } from "@/store/dashboard-store";
 import type { StrategyMode } from "@/types/rl-trading";
@@ -114,9 +114,9 @@ export function AppSidebar() {
       aria-label="Dashboard navigation"
     >
       <div className="sidebar-logo">
-        <div className="sidebar-logo-mark" aria-hidden>
-          <Layers className="size-4" strokeWidth={1.75} />
-        </div>
+        <Link href="/" className="sidebar-logo-mark" aria-label="RL Portfolio Ops — Overview">
+          <BrandLogoMark size={32} />
+        </Link>
         <div className="sidebar-logo-text">
           <p className="sidebar-logo-name">RL Portfolio Ops</p>
           <p className="sidebar-logo-sub">v0.1 · Paper sim</p>

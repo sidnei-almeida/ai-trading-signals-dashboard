@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, IBM_Plex_Mono, Sora } from "next/font/google";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getSiteUrl } from "@/lib/site-url";
 
 import "./globals.css";
 
@@ -27,10 +28,52 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+const siteUrl = getSiteUrl();
+const appTitle = "RL Portfolio Allocation Dashboard";
+const appDescription =
+  "PPO-based portfolio allocation, historical market replay, and paper-trading simulation.";
+
 export const metadata: Metadata = {
-  title: "RL Portfolio Allocation Dashboard",
-  description:
-    "PPO-based portfolio allocation, historical market replay, and paper-trading simulation.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: appTitle,
+    template: `%s · RL Portfolio Ops`,
+  },
+  description: appDescription,
+  applicationName: "RL Portfolio Ops",
+  authors: [{ name: "RL Portfolio Ops" }],
+  creator: "RL Portfolio Ops",
+  icons: {
+    icon: [{ url: "/brand/logo-mark.svg", type: "image/svg+xml" }],
+    shortcut: "/brand/logo-mark.svg",
+    apple: [{ url: "/brand/logo-mark.svg", type: "image/svg+xml" }],
+  },
+  manifest: "/site.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: appTitle,
+    title: appTitle,
+    description: appDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: appTitle,
+    description: appDescription,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1a2826" },
+    { color: "#1a2826" },
+  ],
+  colorScheme: "dark",
 };
 
 export default function RootLayout({

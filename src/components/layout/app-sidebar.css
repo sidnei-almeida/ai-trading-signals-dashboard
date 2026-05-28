@@ -37,26 +37,15 @@
 }
 
 .sidebar-logo-mark {
-  position: relative;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  display: block;
+  line-height: 0;
   border-radius: 8px;
-  border: 1px solid rgba(248, 215, 148, 0.2);
-  background: var(--emerald);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--khaki);
+  transition: opacity 0.15s ease;
 }
 
-.sidebar-logo-mark::after {
-  content: "";
-  position: absolute;
-  inset: 4px;
-  border-radius: 4px;
-  border: 1px solid rgba(248, 215, 148, 0.12);
-  pointer-events: none;
+.sidebar-logo-mark:hover {
+  opacity: 0.92;
 }
 
 .sidebar-logo-text {
