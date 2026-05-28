@@ -380,6 +380,10 @@
   color: #b96b30;
 }
 
+.dashboard-app .status-line .value.offline {
+  color: #f87171;
+}
+
 .dashboard-app .mode-group {
   display: flex;
   gap: 2px;

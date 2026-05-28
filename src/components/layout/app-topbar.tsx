@@ -12,6 +12,8 @@ import {
 import { StrategyModeControl } from "@/components/layout/strategy-mode-control";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useReplayEngine } from "@/hooks/use-replay-engine";
+import { OPERATING_MODES } from "@/lib/operating-modes";
+import { isBootReady } from "@/store/boot-store";
 import { useDashboardStore } from "@/store/dashboard-store";
 import type { ActivityEvent } from "@/types/rl-trading";
 import { cn } from "@/lib/utils";
@@ -37,6 +39,7 @@ export function AppTopbar() {
     replayTotal,
     replayActive,
     setError,
+    strategyMode,
   } = useDashboardStore();
 
   const logAction = (
@@ -62,6 +65,42 @@ export function AppTopbar() {
 
   const handleStartAgent = () => {
     void (async () => {
+      if (!isBootReady()) {
+        const message = "Boot sequence incomplete. Market data and PPO API must be ready.";
+        setError(message);
+        addActivity({
+          id: `start-err-${Date.now()}`,
+          time: new Date().toISOString(),
+          source: "Operator",
+          symbol: "PORTFOLIO",
+          event: message,
+          signal: "—",
+          confidence: null,
+          riskCheck: "Blocked",
+          action: "START",
+          status: "blocked",
+        });
+        return;
+      }
+
+      if (!health?.isLive || !health.model_loaded) {
+        const message = "PPO policy API is not ready. Inference is disabled.";
+        setError(message);
+        addActivity({
+          id: `start-err-${Date.now()}`,
+          time: new Date().toISOString(),
+          source: "Operator",
+          symbol: "PORTFOLIO",
+          event: message,
+          signal: "—",
+          confidence: null,
+          riskCheck: "Blocked",
+          action: "START",
+          status: "blocked",
+        });
+        return;
+      }
+
       if (agentState === "paused") {
         setAgentState("running");
         logAction("Agent session resumed", "START", "Rebalance");
@@ -187,18 +226,32 @@ export function AppTopbar() {
       </div>
       <div className="status-line">
         <span>
-          <span className="label">API:</span>
-          <span className={cn("value", health?.isLive && "active")}>
-            {health?.isLive ? "FinSight API" : "Demo fallback"}
+          <span className="label">Data:</span>
+          <span className={cn("value", dashboard?.data && "active")}>
+            {dashboard?.source === "stooq_historical"
+              ? "Stooq Historical Replay"
+              : dashboard?.source === "demo_fallback"
+                ? "Demo fallback"
+                : (dashboard?.data?.data_source ?? "—")}
+            {dashboard?.data ? " · Ready" : ""}
           </span>
         </span>
         <span>
-          <span className="label">Data:</span>
-          <span className="value">
-            {dashboard?.source === "stooq_historical"
-              ? "Stooq Historical Replay"
-              : (dashboard?.data?.data_source ?? "—")}
+          <span className="label">API:</span>
+          <span
+            className={cn(
+              "value",
+              health?.isLive && health.model_loaded ? "active" : "offline",
+            )}
+          >
+            {health?.isLive && health.model_loaded
+              ? "FinSight API · Online"
+              : "FinSight API · Offline"}
           </span>
+        </span>
+        <span>
+          <span className="label">Mode:</span>
+          <span className="value">{OPERATING_MODES[strategyMode].label}</span>
         </span>
         <span>
           <span className="label">Agent:</span>
