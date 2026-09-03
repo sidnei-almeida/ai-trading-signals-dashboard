@@ -81,12 +81,22 @@ async function fetchTickerCsv(
   if (!text.trim().toLowerCase().startsWith("date,")) {
     const { apiKeyPresent, apiKeyLength } = stooqKeyDiagnostics(apiKey);
     const keyState = apiKeyPresent
-      ? `STOOQ_API_KEY present (${apiKeyLength} chars) but rejected`
-      : "STOOQ_API_KEY not visible to this process";
-    const reason = /captcha|apikey|verify your browser|requires JavaScript/i.test(text)
-      ? `Stooq refused the download (bot challenge). ${keyState}.`
-      : `Unexpected Stooq response: ${text.slice(0, 160)}`;
-    throw new StooqIngestError(`${reason} [${symbol}]`);
+      ? `key present (${apiKeyLength} chars)`
+      : "no key visible to this process";
+
+    // Stooq signals every failure with a 200 and an HTML body, so the body is
+    // the only way to tell an expired key from a quota block from a challenge.
+    const excerpt = text.replace(/\s+/g, " ").trim().slice(0, 220);
+
+    let kind = "unrecognised response";
+    if (/exceeded the daily hits limit/i.test(text)) kind = "daily quota exceeded";
+    else if (/get your apikey|get_apikey/i.test(text)) kind = "key missing or not accepted";
+    else if (/requires JavaScript|verify your browser|crypto\.subtle/i.test(text))
+      kind = "bot challenge (request blocked before the key was checked)";
+
+    throw new StooqIngestError(
+      `Stooq ${kind} for ${symbol} — ${keyState}. Body: ${excerpt}`,
+    );
   }
 
   return text;
