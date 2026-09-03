@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "data:stooq": "tsx scripts/download-stooq-data.ts"
+    "data:stooq": "tsx scripts/download-stooq-data.ts",
+    "model:export": "python3 scripts/export-ppo-weights.py"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",

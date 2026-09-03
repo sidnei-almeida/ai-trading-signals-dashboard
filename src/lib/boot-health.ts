@@ -10,7 +10,7 @@ function sleep(ms: number): Promise<void> {
 
 export type PolicyHealthResult = HealthResponse & {
   isLive: boolean;
-  source: "api" | "demo_fallback";
+  source: "local_ppo" | "demo_fallback";
 };
 
 export async function fetchPolicyHealthWithRetry(options: {
@@ -29,10 +29,11 @@ export async function fetchPolicyHealthWithRetry(options: {
       }
       lastError = new Error(
         health.message ??
-          "PPO policy API responded but model is not loaded (offline or cold).",
+          "PPO policy health check returned an unloaded model.",
       );
     } catch (e) {
-      lastError = e instanceof Error ? e : new Error("PPO policy API unreachable.");
+      lastError =
+        e instanceof Error ? e : new Error("PPO policy health check failed.");
     }
 
     if (attempt < POLICY_RETRY_MAX) {
@@ -43,7 +44,7 @@ export async function fetchPolicyHealthWithRetry(options: {
 
   throw (
     lastError ??
-    new Error("PPO policy API unavailable after multiple attempts.")
+    new Error("PPO policy unavailable after multiple attempts.")
   );
 }
 

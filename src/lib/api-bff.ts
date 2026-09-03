@@ -17,7 +17,7 @@ export class ApiBffError extends Error {
 }
 
 export async function fetchHealthBff(): Promise<
-  HealthResponse & { isLive: boolean; source: "api" | "demo_fallback" }
+  HealthResponse & { isLive: boolean; source: "local_ppo" | "demo_fallback" }
 > {
   const response = await fetch("/api/health", { cache: "no-store" });
   if (!response.ok) throw new ApiBffError(response.statusText, response.status);

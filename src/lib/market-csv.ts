@@ -3,10 +3,13 @@ import path from "path";
 
 import { RL_TICKERS } from "@/lib/constants";
 import { fetchRemoteSp500Prices } from "@/lib/remote-data";
-import type { PriceHistoryPoint, Ticker } from "@/types/rl-trading";
+import { parseSp500CsvRaw } from "@/lib/sp500-csv";
+import type { DataSource, PriceHistoryPoint, Ticker } from "@/types/rl-trading";
 
 export const MARKET_DIR = path.join(process.cwd(), "data", "market");
 export const PRICES_CSV_PATH = path.join(MARKET_DIR, "prices.csv");
+/** Committed close-only history — the deployed fallback when no Stooq pull ran. */
+export const SP500_CSV_PATH = path.join(process.cwd(), "data", "sp500.csv");
 
 const TICKER_KEYS: Record<Ticker, string> = {
   AAPL: "aapl",
@@ -31,7 +34,10 @@ export interface MarketDataRow {
 }
 
 export interface MarketDataPayload {
+  /** Human-readable provenance for the UI. */
   source: string;
+  /** Provenance as a typed `DashboardData.data_source` value. */
+  dataSource: DataSource;
   tickers: Ticker[];
   rows: MarketDataRow[];
 }
@@ -146,6 +152,7 @@ export function loadMarketDataFromDisk(): MarketDataPayload {
   if (!marketPricesFileExists()) {
     return {
       source: "Stooq historical CSV",
+      dataSource: "stooq_historical",
       tickers: [...RL_TICKERS],
       rows: [],
     };
@@ -154,9 +161,24 @@ export function loadMarketDataFromDisk(): MarketDataPayload {
   const raw = readFileSync(PRICES_CSV_PATH, "utf-8");
   return {
     source: "Stooq historical CSV",
+    dataSource: "stooq_historical",
     tickers: [...RL_TICKERS],
     rows: parseCombinedPricesCsv(raw),
   };
+}
+
+/** Bundled `data/sp500.csv` (close-only) — always present in the deployment. */
+export function loadBundledSp500FromDisk(): MarketDataRow[] {
+  if (!existsSync(SP500_CSV_PATH)) return [];
+  try {
+    const prices = parseSp500CsvRaw(readFileSync(SP500_CSV_PATH, "utf-8"));
+    return sp500PricesToMarketRows(prices).filter((row) =>
+      RL_TICKERS.every((t) => Number.isFinite(row.prices[t])),
+    );
+  } catch (error) {
+    console.warn("[market-data] Bundled sp500.csv unreadable:", error);
+    return [];
+  }
 }
 
 /** Wide sp500.csv (close-only) → rows for Stooq replay (synthetic OHLCV). */
@@ -187,25 +209,40 @@ export function sp500PricesToMarketRows(
 }
 
 /**
- * Local `data/market/prices.csv` when present; otherwise sp500.csv from GitHub
- * (`MARKET_DATA_SP500_CSV_URL` / deep-rl-trading-agent data_fallback).
+ * Price history, best source first:
+ *   1. `data/market/prices.csv` — full OHLCV Stooq pull (`npm run data:stooq`)
+ *   2. `data/sp500.csv` — close-only history committed to the repo
+ *   3. `MARKET_DATA_SP500_CSV_URL` — the same CSV fetched from GitHub
+ *
+ * Tiers 1 and 2 need no network, so a deployment always has data to replay.
  */
 export async function loadMarketData(): Promise<MarketDataPayload> {
   const disk = loadMarketDataFromDisk();
   if (disk.rows.length > 0) return disk;
 
+  const bundled = loadBundledSp500FromDisk();
+  if (bundled.length > 0) {
+    return {
+      source: "Bundled sp500.csv (close-only)",
+      dataSource: "csv_fallback",
+      tickers: [...RL_TICKERS],
+      rows: bundled,
+    };
+  }
+
   try {
     const prices = await fetchRemoteSp500Prices();
-    const rows = sp500PricesToMarketRows(prices);
     return {
       source: "GitHub sp500.csv (data_fallback)",
+      dataSource: "csv_fallback",
       tickers: [...RL_TICKERS],
-      rows,
+      rows: sp500PricesToMarketRows(prices),
     };
   } catch (error) {
     console.warn("[market-data] Remote sp500.csv unavailable:", error);
     return {
       source: "Stooq historical CSV",
+      dataSource: "stooq_historical",
       tickers: [...RL_TICKERS],
       rows: [],
     };

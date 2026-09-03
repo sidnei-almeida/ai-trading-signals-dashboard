@@ -1,7 +1,12 @@
 "use client";
 
 import { Panel } from "@/components/dashboard/panel";
-import { DEFAULT_API_URL, POLICY_MODEL_INFO, RL_TICKERS } from "@/lib/constants";
+import {
+  INFERENCE_ENDPOINT,
+  INFERENCE_RUNTIME_LABEL,
+  POLICY_MODEL_INFO,
+  RL_TICKERS,
+} from "@/lib/constants";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +41,6 @@ function SpecItem({
 export function PolicyModelInfoCard({ onRunInference }: { onRunInference: () => void }) {
   const lastPrediction = useDashboardStore((s) => s.lastPrediction);
   const universe = RL_TICKERS.join(" · ");
-  const endpointHost = DEFAULT_API_URL.replace(/^https?:\/\//, "");
 
   return (
     <Panel
@@ -63,11 +67,8 @@ export function PolicyModelInfoCard({ onRunInference }: { onRunInference: () => 
 
       <div className="mt-3">
         <p className="text-[10px] text-zinc-500">Endpoint</p>
-        <p
-          className="mt-0.5 break-all font-mono text-[10px] leading-snug text-zinc-400"
-          title={DEFAULT_API_URL}
-        >
-          POST /api/predict → {endpointHost}
+        <p className="mt-0.5 break-all font-mono text-[10px] leading-snug text-zinc-400">
+          POST {INFERENCE_ENDPOINT} · {INFERENCE_RUNTIME_LABEL}
         </p>
       </div>
 
@@ -80,7 +81,7 @@ export function PolicyModelInfoCard({ onRunInference }: { onRunInference: () => 
               : "border-amber-500/40 text-[10px] text-amber-400"
           }
         >
-          {lastPrediction?.isLive ? "Live ONNX" : "Demo fallback"}
+          {lastPrediction?.isLive ? "Live PPO" : "Demo fallback"}
         </Badge>
         <Button size="sm" className="h-7 text-xs" onClick={onRunInference}>
           Run policy inference

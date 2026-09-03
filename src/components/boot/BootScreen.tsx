@@ -84,8 +84,7 @@ export function BootScreen() {
               </p>
             ) : policyApiStatus === "failed" ? (
               <p className="boot-error-hint">
-                PPO policy API must return HTTP 200 with model loaded before the dashboard
-                opens.
+                The bundled PPO policy failed to load — see src/lib/ppo/ppo-weights.ts.
               </p>
             ) : null}
           </div>

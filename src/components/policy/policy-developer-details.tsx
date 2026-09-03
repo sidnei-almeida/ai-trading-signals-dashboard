@@ -1,6 +1,6 @@
 "use client";
 
-import { DEFAULT_API_URL } from "@/lib/constants";
+import { INFERENCE_RUNTIME_LABEL } from "@/lib/constants";
 import { useDashboardStore } from "@/store/dashboard-store";
 import type { ObservationVector } from "@/types/rl-trading";
 
@@ -65,7 +65,7 @@ export function PolicyDeveloperDetails({
             ))}
           </ul>
           <p className="mt-2 font-mono text-[10px] text-zinc-600">
-            Base URL: {DEFAULT_API_URL}
+            Inference: {INFERENCE_RUNTIME_LABEL}
           </p>
         </div>
       </div>

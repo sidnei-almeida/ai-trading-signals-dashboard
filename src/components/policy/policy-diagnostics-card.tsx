@@ -1,7 +1,12 @@
 "use client";
 
 import { Panel } from "@/components/dashboard/panel";
-import { DEFAULT_API_URL, POLICY_MODEL_INFO, RL_TICKERS } from "@/lib/constants";
+import {
+  INFERENCE_ENDPOINT,
+  INFERENCE_RUNTIME_LABEL,
+  POLICY_MODEL_INFO,
+  RL_TICKERS,
+} from "@/lib/constants";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { cn } from "@/lib/utils";
 
@@ -77,11 +82,8 @@ export function PolicyDiagnosticsCard() {
       </div>
 
       <dl className="grid flex-1 grid-cols-2 content-start gap-x-4 gap-y-3">
-        <GridItem label="Endpoint" value="POST /api/predict" />
-        <GridItem
-          label="Upstream"
-          value={DEFAULT_API_URL.replace(/^https?:\/\//, "")}
-        />
+        <GridItem label="Endpoint" value={`POST ${INFERENCE_ENDPOINT}`} />
+        <GridItem label="Runtime" value={INFERENCE_RUNTIME_LABEL} />
         <GridItem
           label="Observation dim"
           value={String(POLICY_MODEL_INFO.observationDim)}

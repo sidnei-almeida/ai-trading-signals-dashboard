@@ -58,7 +58,7 @@ interface BootState {
 export const BOOT_STEPS: BootStep[] = [
   { id: "market_csv", label: "Loading Stooq historical CSV", status: "pending" },
   { id: "validate_replay", label: "Validating market replay data", status: "pending" },
-  { id: "policy_api", label: "Checking PPO policy API", status: "pending" },
+  { id: "policy_api", label: "Loading PPO policy", status: "pending" },
   { id: "portfolio", label: "Initializing paper portfolio", status: "pending" },
   { id: "session", label: "Preparing dashboard session", status: "pending" },
 ];

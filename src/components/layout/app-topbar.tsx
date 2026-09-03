@@ -84,7 +84,7 @@ export function AppTopbar() {
       }
 
       if (!health?.isLive || !health.model_loaded) {
-        const message = "PPO policy API is not ready. Inference is disabled.";
+        const message = "PPO policy is not loaded. Inference is disabled.";
         setError(message);
         addActivity({
           id: `start-err-${Date.now()}`,

@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/sidnei-almeida/ai-trading-signals-dashboard"><strong>View on GitHub</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://groq-finance-inference.onrender.com/docs">FinSight API (OpenAPI)</a>
+  <a href="https://github.com/sidnei-almeida/deep-rl-trading-agent">PPO training repo</a>
 </p>
 
 <p align="center">
@@ -32,9 +32,18 @@
 
 A **dark, operations-style dashboard** for reinforcement-learning portfolio allocation research. It surfaces PPO target weights, mode-adjusted guardrails, historical equity replay, and a full **paper-trading control plane** — without claiming live brokerage connectivity.
 
-The UI loads market and policy data through **Next.js BFF routes** (`/api/*`). It prefers **local Stooq historical CSV** when available, otherwise calls the remote **FinSight** inference API, with a structured demo fallback when both are unavailable.
+The UI loads market and policy data through **Next.js BFF routes** (`/api/*`). **There is no external model server:** the PPO policy runs inside the Next.js process, so a Vercel deployment is fully self-contained — no cold starts, no third-party inference host.
 
-> **Default inference API:** `https://groq-finance-inference.onrender.com` — ONNX PPO policy for a fixed **S&amp;P 500 tech basket** (AAPL, MSFT, GOOGL, AMZN, NVDA).
+> **Inference:** PPO policy for a fixed **S&amp;P 500 tech basket** (AAPL, MSFT, GOOGL, AMZN, NVDA), trained in [deep-rl-trading-agent](https://github.com/sidnei-almeida/deep-rl-trading-agent) and exported from `ppo_policy_100k.onnx`.
+
+### How the model runs on Vercel
+
+The exported ONNX graph is a small MLP — `11 → 64 → 64 → 5`, `tanh` activations, ~10k float32 parameters, Gemm and Tanh operators only. Instead of bundling an ONNX runtime into the serverless function, `scripts/export-ppo-weights.py` extracts the tensors into `src/lib/ppo/ppo-weights.ts` (base64 float32) and `src/lib/ppo/policy.ts` replays the forward pass in plain TypeScript.
+
+- **Zero runtime dependencies** — no `onnxruntime`, no native binaries, no model download at boot
+- **Deterministic** — inference returns the Gaussian mean rather than sampling `N(mean, exp(log_std))`, so curves are reproducible across requests
+- **Verified** — outputs match ONNX Runtime to `~1e-8` relative error across a full 2,516-day backtest
+- **Fast** — the complete backtest (2,516 policy evaluations) runs in well under 100 ms
 
 ---
 
@@ -54,16 +63,16 @@ flowchart LR
   USER[Operator]
   UI[Next.js Dashboard]
   BFF["/api/* BFF"]
-  STOOQ[(Stooq CSV)]
-  API[FinSight API]
+  STOOQ[(Stooq / sp500 CSV)]
+  PPO[PPO policy · in-process]
   STORE[Zustand session]
 
   USER --> UI
   UI --> STORE
   UI --> BFF
   BFF --> STOOQ
-  BFF --> API
-  API --> BFF --> UI
+  BFF --> PPO
+  PPO --> BFF --> UI
 ```
 
 ---
@@ -87,7 +96,7 @@ flowchart LR
 
 ### Policy & risk
 
-- **PPO policy output** — softmax weights, live vs demo inference indicator
+- **PPO policy output** — softmax weights over the in-process policy inference
 - **Observation snapshot** — vector fed to the policy (collapsible raw view)
 - **Guardrail monitoring** — utilization, blocked recommendations, rebalance step limits
 - **Simulated execution queue** — legs with guardrail column on Risk page
@@ -97,7 +106,7 @@ flowchart LR
 - Normalized multi-asset price trend (replay cursor)
 - Signal breakdown (buy / hold / sell bias counts and deltas)
 - **Historical replay engine** — day-by-day paper session over Stooq `price_history`
-- Data-source strip (CSV loaded vs API vs fallback)
+- Data-source strip (Stooq OHLCV vs bundled close-only CSV)
 
 ### Settings & safety
 
@@ -147,7 +156,8 @@ Mode changes are logged in the **Signal &amp; Execution Feed** as simulated oper
 | Charts | Recharts 3 |
 | State | Zustand (persisted session) |
 | Icons | Lucide React |
-| Data | BFF routes + optional Stooq CSV + FinSight REST |
+| Data | BFF routes + bundled CSV history |
+| Inference | PPO weights exported from ONNX, replayed in TypeScript |
 
 ---
 
@@ -159,8 +169,8 @@ Copy `.env.example` to `.env.local`:
 # Production URL (Vercel) — Open Graph, manifest, canonical links
 # NEXT_PUBLIC_SITE_URL=https://your-app.vercel.app
 
-# FinSight / PPO inference API
-NEXT_PUBLIC_RL_TRADING_API_URL=https://groq-finance-inference.onrender.com
+# Optional: override the remote sp500.csv used when no CSV ships with the build
+# MARKET_DATA_SP500_CSV_URL=
 
 # Stooq CSV download only (npm run data:stooq — server-side, never exposed to browser)
 # STOOQ_API_KEY=
@@ -171,7 +181,7 @@ NEXT_PUBLIC_RL_TRADING_API_URL=https://groq-finance-inference.onrender.com
 | Variable | Purpose |
 |----------|---------|
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL on Vercel (recommended in production) |
-| `NEXT_PUBLIC_RL_TRADING_API_URL` | Remote PPO / health / predict API base |
+| `MARKET_DATA_SP500_CSV_URL` | Fallback price history, only if no CSV is present on disk |
 | `STOOQ_*` | Optional historical CSV ingest via `scripts/download-stooq-data.ts` |
 
 ---
@@ -193,7 +203,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> **Note:** Without local CSV, the first request to the FinSight API on Render may take **30–60 seconds** if the service has slept. The dashboard falls back to demo data if the API is unreachable.
+> **Note:** No external service is required. `data/sp500.csv` ships with the repository, so the dashboard replays a full PPO backtest out of the box; `npm run data:stooq` upgrades it to full OHLCV bars.
 
 ### Production build
 
@@ -213,9 +223,8 @@ npm start
    | Variable | Example |
    |----------|---------|
    | `NEXT_PUBLIC_SITE_URL` | `https://your-app.vercel.app` |
-   | `NEXT_PUBLIC_RL_TRADING_API_URL` | `https://groq-finance-inference.onrender.com` |
 
-4. Deploy.
+4. Deploy. No inference service to provision — the policy weights are part of the bundle.
 
 Favicon, Apple touch icon, `site.webmanifest`, and Open Graph image are generated from `src/app/icon.svg`, `src/app/apple-icon.svg`, and `src/app/opengraph-image.tsx`.
 
@@ -230,10 +239,14 @@ ai-trading-signals-dashboard/
 │   └── site.webmanifest
 ├── images/
 │   └── header.png                # README hero banner
-├── data/market/
-│   └── prices.csv                # Stooq ingest output (gitignored if large)
+├── data/
+│   ├── sp500.csv                 # Bundled close-only history (2015 →)
+│   └── market/prices.csv         # Stooq ingest output (gitignored)
+├── models/
+│   └── ppo_policy_100k.onnx      # Source checkpoint for the weight export
 ├── scripts/
-│   └── download-stooq-data.ts
+│   ├── download-stooq-data.ts
+│   └── export-ppo-weights.py     # ONNX → src/lib/ppo/ppo-weights.ts
 ├── src/
 │   ├── app/
 │   │   ├── (dashboard)/          # Overview, Portfolio, Policy, Risk, Watch, Settings
@@ -248,7 +261,8 @@ ai-trading-signals-dashboard/
 │   │   ├── market-watch/ · portfolio/ · policy/ · risk/ · settings/
 │   │   └── ui/                   # shadcn primitives
 │   ├── hooks/                    # Bootstrap, replay, market watch, analytics
-│   ├── lib/                      # API clients, metrics, replay, operating modes
+│   ├── lib/                      # Metrics, replay, operating modes
+│   │   └── ppo/                  # Weights, TypeScript policy, backtest
 │   ├── store/                    # Zustand dashboard store
 │   └── types/rl-trading.ts
 ├── readme_model.md               # README style reference
@@ -260,16 +274,16 @@ ai-trading-signals-dashboard/
 
 ## API surface (BFF)
 
-The browser calls same-origin routes; server code proxies to FinSight or local CSV.
+The browser calls same-origin routes; all model and data work happens server-side in the same deployment.
 
 | Route | Role |
 |-------|------|
-| `GET /api/dashboard-data` | Portfolio series, allocations, history (Stooq → API → demo) |
-| `GET /api/health` | Model / API availability |
-| `POST /api/predict` | PPO inference for current observation |
-| `GET /api/market-data` | Local CSV prices for Market Watch |
+| `GET /api/dashboard-data` | Full PPO backtest over the bundled history — equity, benchmark, allocations |
+| `GET /api/health` | Policy self-test (loads weights, runs a probe observation) |
+| `POST /api/predict` | PPO inference for one 11-dim observation |
+| `GET /api/market-data` | CSV prices for Market Watch |
 
-Upstream contract (when using FinSight): health, predict, and dashboard payloads as documented on the inference service.
+`POST /api/predict` takes `{ "observation": [cash, ...5 share counts, ...5 prices] }` and returns `raw_action` (policy logits), `allocations` (softmax weights), and the critic `value`.
 
 ---
 
@@ -277,9 +291,9 @@ Upstream contract (when using FinSight): health, predict, and dashboard payloads
 
 | Source | When used |
 |--------|-----------|
-| **Stooq CSV** | `data/market/prices.csv` after `npm run data:stooq` — full historical replay |
-| **FinSight API** | Live PPO weights and dashboard envelope |
-| **Demo fallback** | Offline development when API and CSV are missing |
+| **Stooq CSV** | `data/market/prices.csv` after `npm run data:stooq` — full OHLCV historical replay |
+| **Bundled sp500.csv** | `data/sp500.csv`, committed close-only history — the default in a fresh deployment |
+| **Remote sp500.csv** | `MARKET_DATA_SP500_CSV_URL`, only if neither file is on disk |
 
 Universe: **AAPL · MSFT · GOOGL · AMZN · NVDA** (see `src/lib/constants.ts`).
 

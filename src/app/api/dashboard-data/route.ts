@@ -1,52 +1,46 @@
 import { NextResponse } from "next/server";
 
-import { getDashboardData } from "@/lib/api-server";
-import { buildDemoDashboardData } from "@/lib/demo-fallback";
-import { buildStooqDashboardData } from "@/lib/stooq-dashboard";
+import { MARKET_DATA_MISSING_MESSAGE, buildStooqDashboardData } from "@/lib/stooq-dashboard";
 import type { DashboardDataEnvelope } from "@/types/rl-trading";
 
+/**
+ * Full PPO backtest over the bundled price history, computed in this process.
+ * Replaces the retired `/api/v1/dashboard-data` endpoint of the FastAPI service.
+ */
 export async function GET() {
   const fetchedAt = new Date().toISOString();
 
-  const stooq = await buildStooqDashboardData();
-  if (stooq) {
+  try {
+    const data = await buildStooqDashboardData();
+
+    if (!data) {
+      const envelope: DashboardDataEnvelope = {
+        data: null,
+        isLive: false,
+        source: "demo_fallback",
+        fetchedAt,
+        error: MARKET_DATA_MISSING_MESSAGE,
+      };
+      return NextResponse.json(envelope, { status: 503 });
+    }
+
     const envelope: DashboardDataEnvelope = {
-      data: stooq,
+      data,
       isLive: true,
       source: "stooq_historical",
       fetchedAt,
     };
     return NextResponse.json(envelope);
-  }
-
-  try {
-    const data = await Promise.race([
-      getDashboardData(),
-      new Promise<never>((_, reject) => {
-        setTimeout(
-          () => reject(new Error("FinSight API timeout (cold start?)")),
-          12_000,
-        );
-      }),
-    ]);
-    const envelope: DashboardDataEnvelope = {
-      data,
-      isLive: true,
-      source: "api",
-      fetchedAt,
-    };
-    return NextResponse.json(envelope);
   } catch (error) {
-    console.warn("[dashboard-data] FinSight unavailable, using bundled demo:", error);
+    console.error("[dashboard-data] PPO backtest failed:", error);
     const envelope: DashboardDataEnvelope = {
-      data: await buildDemoDashboardData(),
+      data: null,
       isLive: false,
       source: "demo_fallback",
       fetchedAt,
-      error:
-        "Live market API unavailable. Showing bundled S&P 500 demo curves (not live PPO).",
+      error: error instanceof Error ? error.message : "PPO backtest failed.",
     };
-    return NextResponse.json(envelope);
+    return NextResponse.json(envelope, { status: 500 });
   }
 }
 

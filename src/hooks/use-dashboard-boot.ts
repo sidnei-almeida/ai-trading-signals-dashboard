@@ -70,21 +70,19 @@ export function useDashboardBoot() {
       setStepStatus("validate_replay", "ready");
       appendLog("Validated 5-asset universe (AAPL, MSFT, GOOGL, AMZN, NVDA)", "success");
 
-      // Step 3 — PPO policy API (strict — must be live)
+      // Step 3 — PPO policy (in-process; strict — must load)
       setPhase("checking_policy_api");
       setStepStatus("policy_api", "loading");
       setPolicyApiStatus("loading");
       setWarmingMessage(null);
-      appendLog("Checking PPO policy endpoint…", "info");
+      appendLog("Loading PPO policy weights…", "info");
 
       const health = await fetchPolicyHealthWithRetry({
         onAttempt: (attempt, max) => {
           if (stale()) return;
           setPolicyRetry(attempt, max);
           if (attempt > 1) {
-            setWarmingMessage(
-              "Warming policy API — this can take a few seconds.",
-            );
+            setWarmingMessage("Retrying PPO policy load…");
             appendLog(`Attempt ${attempt}/${max}`, "warn");
           } else {
             appendLog(`Attempt ${attempt}/${max}`, "info");
@@ -92,7 +90,7 @@ export function useDashboardBoot() {
         },
         onRetryWait: () => {
           if (stale()) return;
-          appendLog("Policy API cold start — retrying…", "warn");
+          appendLog("PPO policy did not load — retrying…", "warn");
         },
       });
       if (stale()) return;
@@ -106,7 +104,7 @@ export function useDashboardBoot() {
       setStepStatus("policy_api", "ready");
       setPolicyApiStatus("ready");
       setWarmingMessage(null);
-      appendLog("PPO policy API online", "success");
+      appendLog("PPO policy online (in-process)", "success");
 
       // Step 4 — dashboard + portfolio baseline
       setPhase("initializing_portfolio");
@@ -138,9 +136,9 @@ export function useDashboardBoot() {
       const prediction = await fetchPredictBff([...observation]);
       if (stale()) return;
 
-      if (!prediction.isLive || prediction.source !== "api") {
+      if (!prediction.isLive || prediction.source !== "local_ppo") {
         throw new Error(
-          "PPO inference unavailable. Dashboard requires a live policy API (HTTP 200).",
+          "PPO inference unavailable. Dashboard requires the in-process policy to load.",
         );
       }
 

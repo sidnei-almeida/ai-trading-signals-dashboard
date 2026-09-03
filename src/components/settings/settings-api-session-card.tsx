@@ -5,10 +5,13 @@ import { useState } from "react";
 import { Panel } from "@/components/dashboard/panel";
 import { SettingRow } from "@/components/settings/settings-form";
 import { fetchHealthBff } from "@/lib/api-bff";
-import { DEFAULT_API_URL, POLICY_MODEL_INFO } from "@/lib/constants";
+import {
+  INFERENCE_ENDPOINT,
+  INFERENCE_RUNTIME_LABEL,
+  POLICY_MODEL_INFO,
+} from "@/lib/constants";
 import { useDashboardStore } from "@/store/dashboard-store";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -35,12 +38,10 @@ export function SettingsApiSessionCard() {
   const [testResult, setTestResult] = useState<string | null>(null);
 
   const apiStatus = health?.isLive
-    ? "Reachable · model loaded"
+    ? "PPO policy loaded"
     : health
-      ? "Fallback / demo"
+      ? "Policy unavailable"
       : "Not checked";
-
-  const host = settings.apiBaseUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
   const handleTest = async () => {
     setTesting(true);
@@ -48,10 +49,10 @@ export function SettingsApiSessionCard() {
     try {
       const h = await fetchHealthBff();
       setTestResult(
-        h.isLive ? `OK · ${h.status}` : `Unreachable · ${h.status ?? "unknown"}`,
+        h.isLive ? `OK · ${h.status}` : `Failed · ${h.status ?? "unknown"}`,
       );
     } catch {
-      setTestResult("Connection failed");
+      setTestResult("Health check failed");
     } finally {
       setTesting(false);
     }
@@ -60,20 +61,20 @@ export function SettingsApiSessionCard() {
   return (
     <Panel
       title="API & Session"
-      subtitle="FinSight backend · paper trading session"
+      subtitle="In-process PPO inference · paper trading session"
       className="h-full"
       bodyClassName="flex h-full min-h-0 flex-col gap-3 p-3"
     >
-      <SettingRow
-        label="API base URL"
-        hint={`NEXT_PUBLIC_RL_TRADING_API_URL · default ${DEFAULT_API_URL.replace(/^https?:\/\//, "")}`}
-      >
-        <Input
-          className="h-8 font-mono text-xs"
-          value={settings.apiBaseUrl}
-          onChange={(e) => setSettings({ apiBaseUrl: e.target.value })}
-        />
-      </SettingRow>
+      <div className="rounded-md border border-zinc-800/70 bg-zinc-950/40 px-2.5 py-2">
+        <p className="text-[10px] text-zinc-500">Model runtime</p>
+        <p className="mt-0.5 font-mono text-[11px] text-zinc-200">
+          {INFERENCE_RUNTIME_LABEL}
+        </p>
+        <p className="mt-1 text-[10px] leading-snug text-zinc-600">
+          The PPO policy weights ship with the app and run inside the Next.js
+          server — there is no external model host to configure.
+        </p>
+      </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <SettingRow label="Trading session">
@@ -92,16 +93,16 @@ export function SettingsApiSessionCard() {
         </SettingRow>
         <SettingRow label="Inference route">
           <p className="font-mono text-[10px] leading-snug text-zinc-400">
-            POST /api/predict
+            POST {INFERENCE_ENDPOINT}
             <br />
-            BFF → {host || "—"}
+            {INFERENCE_RUNTIME_LABEL}
           </p>
         </SettingRow>
       </div>
 
       <div className="rounded-md border border-zinc-800/70 bg-zinc-950/40 px-2.5 py-2">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] text-zinc-500">Connection status</p>
+          <p className="text-[10px] text-zinc-500">Policy status</p>
           <Button
             size="sm"
             variant="outline"
@@ -138,8 +139,8 @@ export function SettingsApiSessionCard() {
             label="Execution"
             value={settings.operatingMode === "paper" ? "Paper trading" : "Demo"}
           />
-          <SessionMetric label="Model" value={POLICY_MODEL_INFO.algorithm} />
-          <SessionMetric label="Upstream host" value={host || "—"} />
+          <SessionMetric label="Model" value={POLICY_MODEL_INFO.checkpoint} />
+          <SessionMetric label="Runtime" value={POLICY_MODEL_INFO.runtime} />
           <SessionMetric
             label="Health"
             value={health?.model_loaded ? "Model loaded" : "No model flag"}

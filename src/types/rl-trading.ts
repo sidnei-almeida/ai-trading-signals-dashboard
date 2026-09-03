@@ -104,8 +104,10 @@ export interface PredictionResponse {
 
 export interface PredictionEnvelope {
   result: PredictionResponse;
+  /** Critic value estimate for the observation, when the source provides one. */
+  value?: number;
   isLive: boolean;
-  source: "api" | "demo_fallback";
+  source: "local_ppo" | "demo_fallback";
   fetchedAt: string;
 }
 
@@ -155,7 +157,6 @@ export interface GuardrailConfig {
 }
 
 export interface SessionSettings {
-  apiBaseUrl: string;
   operatingMode: "paper" | "demo";
   rebalanceIntervalMinutes: number;
   startingCash: number;

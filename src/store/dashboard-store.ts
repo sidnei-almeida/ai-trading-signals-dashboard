@@ -3,8 +3,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { FINSIGHT_API_BASE_URL } from "@/lib/api-config";
-import { DEFAULT_API_URL } from "@/lib/constants";
 import { guardrailsFromMode } from "@/lib/operating-modes";
 import { clearSharedReplayEngine } from "@/lib/replay-session";
 import type {
@@ -61,7 +59,6 @@ interface DashboardState {
 }
 
 const defaultSettings: SessionSettings = {
-  apiBaseUrl: FINSIGHT_API_BASE_URL || DEFAULT_API_URL,
   operatingMode: "paper",
   rebalanceIntervalMinutes: 15,
   startingCash: 100_000,

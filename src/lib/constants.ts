@@ -6,11 +6,12 @@ export const INITIAL_BALANCE = 100_000;
 export const TRANSACTION_COST = 0.001;
 export const OBSERVATION_LENGTH = 11;
 
-/** Remote FinSight API (old-quant-core) — not localhost. */
-export const DEFAULT_API_URL =
-  process.env.NEXT_PUBLIC_RL_TRADING_API_URL ??
-  process.env.NEXT_PUBLIC_FINSIGHT_API_URL ??
-  "https://groq-finance-inference.onrender.com";
+/**
+ * PPO inference runs inside this Next.js app (see `src/lib/ppo/policy.ts`).
+ * There is no upstream model server — these are display labels only.
+ */
+export const INFERENCE_ENDPOINT = "/api/predict";
+export const INFERENCE_RUNTIME_LABEL = "in-process · no upstream API";
 
 export const DEFAULT_GUARDRAILS: GuardrailConfig = {
   maxSingleAssetAllocation: 0.35,
@@ -21,8 +22,11 @@ export const DEFAULT_GUARDRAILS: GuardrailConfig = {
 
 export const POLICY_MODEL_INFO = {
   algorithm: "PPO",
-  runtime: "ONNX Runtime (CPU)",
+  checkpoint: "ppo_policy_100k",
+  /** Weights exported from ONNX, replayed by a TypeScript MLP — see src/lib/ppo. */
+  runtime: "TypeScript MLP (ONNX export)",
   universe: "AAPL, MSFT, GOOGL, AMZN, NVDA",
   observationDim: 11,
   actionDim: 5,
+  hiddenLayers: "64 × 64 (tanh)",
 } as const;
