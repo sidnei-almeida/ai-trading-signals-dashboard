@@ -9,7 +9,8 @@
     "lint": "eslint",
     "data:stooq": "tsx scripts/download-stooq-data.ts",
     "model:export": "python3 scripts/export-ppo-weights.py",
-    "db:migrate": "tsx scripts/db-migrate.ts"
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "data:sync": "tsx scripts/ingest-market-data.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

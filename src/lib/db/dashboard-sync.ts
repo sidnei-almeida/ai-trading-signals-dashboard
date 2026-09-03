@@ -95,14 +95,18 @@ export async function syncDashboardData(
   let bars = await loadMarketCloses();
 
   const csvLast = csv.rows[csv.rows.length - 1]?.date ?? null;
-  const stale =
-    csv.rows.length > 0 &&
-    (bars.length !== csv.rows.length ||
-      bars[bars.length - 1]?.date !== csvLast);
+  const storedLast = bars[bars.length - 1]?.date ?? null;
 
-  // 2 — bring the table in line with the CSV when the range differs.
+  // 2 — the CSV is a seed, not a mirror. Write it only when the table is empty
+  // or the file genuinely reaches further than what is stored; otherwise a
+  // database already carrying fresher bars from the Stooq ingest would be
+  // rewritten with the bundled snapshot on every single boot.
+  const needsSeed =
+    csv.rows.length > 0 &&
+    (storedLast === null || (csvLast !== null && csvLast > storedLast));
+
   let barsWritten = 0;
-  if (stale) {
+  if (needsSeed) {
     barsWritten = await upsertMarketBars(csv.rows, csv.source);
     bars = await loadMarketCloses();
   }

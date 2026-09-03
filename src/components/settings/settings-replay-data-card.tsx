@@ -19,21 +19,46 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
+/** "2026-09-02 · 1 day old" — makes a stale ingest obvious at a glance. */
+function describeCoverage(lastDate: string): string {
+  const last = new Date(`${lastDate}T00:00:00Z`);
+  const today = new Date();
+  const days = Math.floor(
+    (Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) -
+      last.getTime()) /
+      86_400_000,
+  );
+  if (!Number.isFinite(days)) return lastDate;
+  if (days <= 0) return `${lastDate} · today`;
+  if (days === 1) return `${lastDate} · 1 day old`;
+  if (days < 90) return `${lastDate} · ${days} days old`;
+  return `${lastDate} · ${Math.floor(days / 30)} months old`;
+}
+
 export function SettingsReplayDataCard() {
   const { settings, setSettings, dashboard, replayActive, replayIndex, replayTotal } =
     useDashboardStore();
   const { startReplay } = useReplayEngine();
   const [barStore, setBarStore] = useState<string | null>(null);
+  const [coverage, setCoverage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void fetchMarketDataBff()
       .then((p) => {
         if (cancelled) return;
-        setBarStore(p.rows.length > 0 ? `${p.source} · ${p.rows.length} bars` : "empty");
+        if (p.rows.length === 0) {
+          setBarStore("empty");
+          setCoverage("no bars");
+          return;
+        }
+        setBarStore(`${p.source} · ${p.rows.length} bars`);
+        setCoverage(describeCoverage(p.rows[p.rows.length - 1].date));
       })
       .catch(() => {
-        if (!cancelled) setBarStore("unavailable");
+        if (cancelled) return;
+        setBarStore("unavailable");
+        setCoverage(null);
       });
     return () => {
       cancelled = true;
@@ -57,6 +82,7 @@ export function SettingsReplayDataCard() {
           value={source ? dataSourceDisplayLabel(source) : "—"}
         />
         <SpecLine label="Bar storage" value={barStore ?? "…"} />
+        <SpecLine label="Latest bar" value={coverage ?? "…"} />
         <SpecLine
           label="Replay position"
           value={
