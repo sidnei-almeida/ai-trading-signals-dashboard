@@ -20,6 +20,15 @@ export class StooqIngestError extends Error {
   }
 }
 
+/** Whether an API key is configured, and its length — never the value itself. */
+export function stooqKeyDiagnostics(apiKey?: string): {
+  apiKeyPresent: boolean;
+  apiKeyLength: number;
+} {
+  const key = apiKey ?? process.env.STOOQ_API_KEY?.trim();
+  return { apiKeyPresent: Boolean(key), apiKeyLength: key?.length ?? 0 };
+}
+
 function toYmd(date: Date): string {
   return [
     date.getUTCFullYear(),
@@ -54,6 +63,13 @@ async function fetchTickerCsv(
   const response = await fetch(buildUrl(symbol, d1, d2, apiKey), {
     cache: "no-store",
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    headers: {
+      // Stooq serves its bot challenge to requests that do not look like a
+      // browser, so send a plain desktop UA alongside the key.
+      "User-Agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36",
+      Accept: "text/csv,text/plain,*/*",
+    },
   });
 
   if (!response.ok) {
@@ -63,9 +79,13 @@ async function fetchTickerCsv(
   const text = await response.text();
 
   if (!text.trim().toLowerCase().startsWith("date,")) {
+    const { apiKeyPresent, apiKeyLength } = stooqKeyDiagnostics(apiKey);
+    const keyState = apiKeyPresent
+      ? `STOOQ_API_KEY present (${apiKeyLength} chars) but rejected`
+      : "STOOQ_API_KEY not visible to this process";
     const reason = /captcha|apikey|verify your browser|requires JavaScript/i.test(text)
-      ? "Stooq refused the download (bot challenge). STOOQ_API_KEY is missing or invalid."
-      : `Unexpected Stooq response: ${text.slice(0, 120)}`;
+      ? `Stooq refused the download (bot challenge). ${keyState}.`
+      : `Unexpected Stooq response: ${text.slice(0, 160)}`;
     throw new StooqIngestError(`${reason} [${symbol}]`);
   }
 
