@@ -1,29 +1,29 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Area,
   AreaChart,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import { ChartFrame } from "@/components/charts/chart-frame";
 import { CHART } from "@/lib/chart-styles";
 import { formatPercent } from "@/lib/format";
 import type { DrawdownPoint } from "@/lib/portfolio-analytics";
 
 export function DrawdownChart({ series }: { series: DrawdownPoint[] }) {
-  const data = series.map((p) => ({
-    i: p.index,
-    dd: p.value,
-    date: p.date,
-  }));
+  const data = useMemo(
+    () => series.map((p) => ({ i: p.index, dd: p.value, date: p.date })),
+    [series],
+  );
 
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ChartFrame>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <CartesianGrid stroke={CHART.grid} vertical={false} />
           <XAxis
@@ -56,7 +56,7 @@ export function DrawdownChart({ series }: { series: DrawdownPoint[] }) {
             strokeWidth={1.5}
           />
         </AreaChart>
-      </ResponsiveContainer>
+      </ChartFrame>
     </div>
   );
 }

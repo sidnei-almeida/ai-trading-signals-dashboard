@@ -17,21 +17,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 export function SettingsReplayDataCard() {
   const { settings, setSettings, dashboard, replayActive, replayIndex, replayTotal } =
     useDashboardStore();
   const { startReplay } = useReplayEngine();
-  const [csvLoaded, setCsvLoaded] = useState<boolean | null>(null);
+  const [barStore, setBarStore] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void fetchMarketDataBff()
       .then((p) => {
-        if (!cancelled) setCsvLoaded(p.rows.length > 0);
+        if (cancelled) return;
+        setBarStore(p.rows.length > 0 ? `${p.source} · ${p.rows.length} bars` : "empty");
       })
       .catch(() => {
-        if (!cancelled) setCsvLoaded(false);
+        if (!cancelled) setBarStore("unavailable");
       });
     return () => {
       cancelled = true;
@@ -54,10 +56,7 @@ export function SettingsReplayDataCard() {
           label="Active source"
           value={source ? dataSourceDisplayLabel(source) : "—"}
         />
-        <SpecLine
-          label="Local CSV"
-          value={csvLoaded === true ? "prices.csv loaded" : csvLoaded === false ? "missing" : "…"}
-        />
+        <SpecLine label="Bar storage" value={barStore ?? "…"} />
         <SpecLine
           label="Replay position"
           value={
@@ -67,6 +66,15 @@ export function SettingsReplayDataCard() {
           }
         />
       </div>
+      <SettingRow
+        label="Auto-start on load"
+        value={settings.autoStartAgent ? "On" : "Off"}
+      >
+        <Switch
+          checked={settings.autoStartAgent}
+          onCheckedChange={(autoStartAgent) => setSettings({ autoStartAgent })}
+        />
+      </SettingRow>
       <SettingRow label="Replay tick interval (ms)" value={String(settings.replayTickMs)}>
         <Input
           type="number"

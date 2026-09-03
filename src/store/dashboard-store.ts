@@ -64,6 +64,7 @@ const defaultSettings: SessionSettings = {
   startingCash: 100_000,
   dataSourcePreference: "auto",
   replayTickMs: 2000,
+  autoStartAgent: true,
 };
 
 function snapshotFromEnvelope(
@@ -176,6 +177,8 @@ export const useDashboardStore = create<DashboardState>()(
         const mode = merged.strategyMode ?? "balanced";
         return {
           ...merged,
+          // Sessions persisted before a setting existed would drop it entirely.
+          settings: { ...defaultSettings, ...merged.settings },
           strategyMode: mode,
           guardrails: guardrailsFromMode(mode),
         };

@@ -6,12 +6,12 @@ import {
   Line,
   LineChart,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import { ChartFrame } from "@/components/charts/chart-frame";
 import { ASSET_COLORS } from "@/lib/asset-colors";
 import { CHART } from "@/lib/chart-styles";
 import { RL_TICKERS } from "@/lib/constants";
@@ -38,7 +38,7 @@ export function NormalizedPriceChart({
         Indexed to 100 at window start · local price history
       </p>
       <div className="min-h-0 flex-1">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartFrame>
           <LineChart data={series} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis
@@ -88,7 +88,7 @@ export function NormalizedPriceChart({
               />
             ))}
           </LineChart>
-        </ResponsiveContainer>
+        </ChartFrame>
       </div>
     </div>
   );

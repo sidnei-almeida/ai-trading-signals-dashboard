@@ -84,7 +84,24 @@ export function PerformancePanel() {
     };
   }, [historicalChart, dashboard]);
 
-  if (!historical) {
+  const fullLen = historical?.agent_history.length ?? 0;
+  const sliceStart =
+    range === "all" ? 0 : Math.max(0, fullLen - (range === "30d" ? 30 : 90));
+
+  // Stable identities so PerformanceChart can memoize its row projection.
+  const sliced = useMemo(
+    () => (historical ? sliceHistorical(historical, range) : null),
+    [historical, range],
+  );
+  const liveInRange = useMemo(
+    () =>
+      liveReplayPoints
+        .filter((p) => p.index >= sliceStart)
+        .map((p) => ({ ...p, index: p.index - sliceStart })),
+    [liveReplayPoints, sliceStart],
+  );
+
+  if (!sliced) {
     return (
       <Panel title="Portfolio Performance" className="h-full min-h-[340px]">
         <p className="text-sm text-zinc-500">
@@ -97,14 +114,6 @@ export function PerformancePanel() {
       </Panel>
     );
   }
-
-  const fullLen = historical.agent_history.length;
-  const sliceStart =
-    range === "all" ? 0 : Math.max(0, fullLen - (range === "30d" ? 30 : 90));
-  const sliced = sliceHistorical(historical, range);
-  const liveInRange = liveReplayPoints
-    .filter((p) => p.index >= sliceStart)
-    .map((p) => ({ ...p, index: p.index - sliceStart }));
 
   const m =
     liveReplayPoints.length > 0

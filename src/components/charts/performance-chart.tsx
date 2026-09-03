@@ -1,17 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   CartesianGrid,
   Legend,
   Line,
   LineChart,
   ReferenceLine,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import { ChartFrame } from "@/components/charts/chart-frame";
 import { CHART } from "@/lib/chart-styles";
 import { formatCompactCurrency } from "@/lib/format";
 import type { HistoricalChartSnapshot, LiveReplayPoint } from "@/types/rl-trading";
@@ -28,19 +29,22 @@ export function PerformanceChart({
   replayCursorIndex?: number;
   className?: string;
 }) {
-  const liveByIndex = new Map(liveReplay.map((p) => [p.index, p]));
-
-  const chartData = historical.agent_history.map((agentHist, i) => {
-    const live = liveByIndex.get(i);
-    return {
-      i,
-      date: historical.dates[i],
-      agentHistorical: agentHist,
-      benchmark: historical.benchmark_history[i] ?? agentHist,
-      agentLive: live?.agent ?? null,
-      benchmarkLive: live?.benchmark ?? null,
-    };
-  });
+  // "All" spans the full history (~2.5k points); rebuilding it on every render
+  // makes each resize far more expensive than it needs to be.
+  const chartData = useMemo(() => {
+    const liveByIndex = new Map(liveReplay.map((p) => [p.index, p]));
+    return historical.agent_history.map((agentHist, i) => {
+      const live = liveByIndex.get(i);
+      return {
+        i,
+        date: historical.dates[i],
+        agentHistorical: agentHist,
+        benchmark: historical.benchmark_history[i] ?? agentHist,
+        agentLive: live?.agent ?? null,
+        benchmarkLive: live?.benchmark ?? null,
+      };
+    });
+  }, [historical, liveReplay]);
 
   const hasLive = liveReplay.length > 0;
   const lastLive = liveReplay[liveReplay.length - 1];
@@ -65,7 +69,7 @@ export function PerformanceChart({
         {hasLive ? " · live replay overlay" : ""}
       </p>
       <div className="h-[240px] w-full shrink-0">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartFrame>
           <LineChart data={chartData} margin={{ top: 2, right: 4, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis
@@ -142,7 +146,7 @@ export function PerformanceChart({
               />
             ) : null}
           </LineChart>
-        </ResponsiveContainer>
+        </ChartFrame>
       </div>
     </div>
   );

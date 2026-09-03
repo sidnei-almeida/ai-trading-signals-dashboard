@@ -12,10 +12,19 @@ export type DataSource =
   | "demo_local"
   | "stooq_historical";
 
+export interface DatabaseHealth {
+  configured: boolean;
+  connected: boolean;
+  barCount: number;
+  lastDate: string | null;
+  error?: string;
+}
+
 export interface HealthResponse {
   status: string;
   message?: string;
   model_loaded: boolean;
+  database?: DatabaseHealth;
 }
 
 export interface PriceHistoryPoint {
@@ -62,6 +71,14 @@ export interface DashboardDataEnvelope {
   source: "api" | "demo_fallback" | "stooq_historical";
   fetchedAt: string;
   error?: string;
+  /** Whether the payload was served from Postgres or computed in this process. */
+  storage?: "postgres" | "in_process";
+  /** Bars written to Postgres while serving this request. */
+  barsWritten?: number;
+  /** True when the PPO backtest ran instead of being read back from storage. */
+  backtestComputed?: boolean;
+  /** When the served backtest was originally computed. */
+  computedAt?: string | null;
 }
 
 /** Full backtest curve — preserved when live replay starts. */
@@ -163,4 +180,6 @@ export interface SessionSettings {
   dataSourcePreference: "api" | "auto";
   /** Ms between historical replay ticks when agent is running */
   replayTickMs: number;
+  /** Start the replay session automatically once boot completes */
+  autoStartAgent: boolean;
 }

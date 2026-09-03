@@ -4,19 +4,19 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import { ChartFrame } from "@/components/charts/chart-frame";
 import { CHART } from "@/lib/chart-styles";
 import type { ReturnDistribution } from "@/lib/portfolio-analytics";
 
 export function ReturnDistributionChart({ dist }: { dist: ReturnDistribution }) {
   return (
     <div className="h-[200px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ChartFrame>
         <BarChart data={dist.bins} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
           <CartesianGrid stroke={CHART.grid} vertical={false} />
           <XAxis
@@ -43,7 +43,7 @@ export function ReturnDistributionChart({ dist }: { dist: ReturnDistribution }) 
             radius={[2, 2, 0, 0]}
           />
         </BarChart>
-      </ResponsiveContainer>
+      </ChartFrame>
     </div>
   );
 }

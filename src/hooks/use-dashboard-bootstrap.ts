@@ -3,19 +3,36 @@
 import { useEffect, useRef } from "react";
 
 import { useReplayEngine } from "@/hooks/use-replay-engine";
-import { isBootReady } from "@/store/boot-store";
+import { isBootReady, useBootStore } from "@/store/boot-store";
 import { useDashboardStore } from "@/store/dashboard-store";
 
 /** Agent replay tick loop — runs only after boot completes. */
 export function useDashboardBootstrap() {
-  const { tickReplay } = useReplayEngine();
+  const { startReplay, tickReplay } = useReplayEngine();
   const { agentState, settings } = useDashboardStore();
-  const booted = useRef(false);
+  const bootPhase = useBootStore((s) => s.phase);
+  const autoStarted = useRef(false);
 
+  // Start the session as soon as boot finishes, so the feed is live without
+  // the operator pressing Start. Guarded by a ref so a later Stop sticks.
   useEffect(() => {
-    if (!isBootReady() || booted.current) return;
-    booted.current = true;
-  }, []);
+    if (bootPhase !== "ready") return;
+    if (!settings.autoStartAgent) return;
+    if (autoStarted.current) return;
+    autoStarted.current = true;
+
+    void (async () => {
+      try {
+        await startReplay();
+        useDashboardStore.getState().setAgentState("running");
+      } catch (e) {
+        const message =
+          e instanceof Error ? e.message : "Failed to auto-start agent session";
+        console.error("[Bootstrap] auto-start failed:", message);
+        useDashboardStore.getState().setError(message);
+      }
+    })();
+  }, [bootPhase, settings.autoStartAgent, startReplay]);
 
   useEffect(() => {
     if (!isBootReady()) return;

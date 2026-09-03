@@ -1,7 +1,8 @@
 "use client";
 
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Cell, Tooltip, XAxis, YAxis } from "recharts";
 
+import { ChartFrame } from "@/components/charts/chart-frame";
 import { ASSET_COLORS } from "@/lib/asset-colors";
 import { CHART } from "@/lib/chart-styles";
 import { RL_TICKERS } from "@/lib/constants";
@@ -24,7 +25,7 @@ export function AllocationBarChart({
 
   return (
     <div className={cn("h-[132px] w-full shrink-0", className)}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ChartFrame>
         <BarChart data={chartData} layout="vertical" margin={{ left: 4, right: 4, top: 0, bottom: 0 }}>
           <XAxis type="number" domain={[0, 1]} hide />
           <YAxis
@@ -45,7 +46,7 @@ export function AllocationBarChart({
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+      </ChartFrame>
     </div>
   );
 }
