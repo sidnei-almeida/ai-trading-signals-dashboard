@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "data:stooq": "tsx scripts/download-stooq-data.ts",
-    "model:export": "python3 scripts/export-ppo-weights.py"
+    "model:export": "python3 scripts/export-ppo-weights.py",
+    "db:migrate": "tsx scripts/db-migrate.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

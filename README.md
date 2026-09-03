@@ -32,7 +32,7 @@
 
 A **dark, operations-style dashboard** for reinforcement-learning portfolio allocation research. It surfaces PPO target weights, mode-adjusted guardrails, historical equity replay, and a full **paper-trading control plane** — without claiming live brokerage connectivity.
 
-The UI loads market and policy data through **Next.js BFF routes** (`/api/*`). **There is no external model server:** the PPO policy runs inside the Next.js process, so a Vercel deployment is fully self-contained — no cold starts, no third-party inference host.
+The UI loads market and policy data through **Next.js BFF routes** (`/api/*`). **There is no external model server:** the PPO policy runs inside the Next.js process, and results are persisted in **Neon Postgres**, so a Vercel deployment is fully self-contained — no cold starts, no third-party inference host.
 
 > **Inference:** PPO policy for a fixed **S&amp;P 500 tech basket** (AAPL, MSFT, GOOGL, AMZN, NVDA), trained in [deep-rl-trading-agent](https://github.com/sidnei-almeida/deep-rl-trading-agent) and exported from `ppo_policy_100k.onnx`.
 
@@ -63,16 +63,18 @@ flowchart LR
   USER[Operator]
   UI[Next.js Dashboard]
   BFF["/api/* BFF"]
-  STOOQ[(Stooq / sp500 CSV)]
+  CSV[(Bundled CSV)]
+  PG[(Neon Postgres)]
   PPO[PPO policy · in-process]
   STORE[Zustand session]
 
   USER --> UI
   UI --> STORE
   UI --> BFF
-  BFF --> STOOQ
-  BFF --> PPO
-  PPO --> BFF --> UI
+  BFF --> PG
+  CSV -->|sync on boot| PG
+  PPO -->|store backtest| PG
+  PG --> BFF --> UI
 ```
 
 ---
@@ -156,7 +158,7 @@ Mode changes are logged in the **Signal &amp; Execution Feed** as simulated oper
 | Charts | Recharts 3 |
 | State | Zustand (persisted session) |
 | Icons | Lucide React |
-| Data | BFF routes + bundled CSV history |
+| Data | Neon Postgres, seeded from bundled CSV history |
 | Inference | PPO weights exported from ONNX, replayed in TypeScript |
 
 ---
@@ -168,6 +170,9 @@ Copy `.env.example` to `.env.local`:
 ```env
 # Production URL (Vercel) — Open Graph, manifest, canonical links
 # NEXT_PUBLIC_SITE_URL=https://your-app.vercel.app
+
+# Neon Postgres — stores market bars and precomputed PPO backtests
+NEON_POSTGRES=postgresql://USER:PASSWORD@HOST.neon.tech/DB?sslmode=require
 
 # Optional: override the remote sp500.csv used when no CSV ships with the build
 # MARKET_DATA_SP500_CSV_URL=
@@ -181,6 +186,7 @@ Copy `.env.example` to `.env.local`:
 | Variable | Purpose |
 |----------|---------|
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL on Vercel (recommended in production) |
+| `NEON_POSTGRES` | Neon connection string. Without it the dashboard recomputes from CSV on every request |
 | `MARKET_DATA_SP500_CSV_URL` | Fallback price history, only if no CSV is present on disk |
 | `STOOQ_*` | Optional historical CSV ingest via `scripts/download-stooq-data.ts` |
 
@@ -193,7 +199,10 @@ git clone https://github.com/sidnei-almeida/ai-trading-signals-dashboard.git
 cd ai-trading-signals-dashboard
 
 npm install
-cp .env.example .env.local
+cp .env.example .env.local     # then set NEON_POSTGRES
+
+# Create the Postgres tables (idempotent)
+npm run db:migrate
 
 # Optional: download Stooq historical prices into data/market/
 npm run data:stooq
@@ -203,7 +212,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> **Note:** No external service is required. `data/sp500.csv` ships with the repository, so the dashboard replays a full PPO backtest out of the box; `npm run data:stooq` upgrades it to full OHLCV bars.
+> **Note:** `NEON_POSTGRES` is optional for local work — without it the dashboard runs the backtest in-process on every request. `data/sp500.csv` ships with the repository, so it replays a full PPO backtest out of the box; `npm run data:stooq` upgrades it to full OHLCV bars.
 
 ### Production build
 
@@ -223,8 +232,10 @@ npm start
    | Variable | Example |
    |----------|---------|
    | `NEXT_PUBLIC_SITE_URL` | `https://your-app.vercel.app` |
+   | `NEON_POSTGRES` | `postgresql://…@….neon.tech/neondb?sslmode=require` |
 
-4. Deploy. No inference service to provision — the policy weights are part of the bundle.
+4. Run `npm run db:migrate` once against the Neon project.
+5. Deploy. No inference service to provision — the policy weights are part of the bundle.
 
 Favicon, Apple touch icon, `site.webmanifest`, and Open Graph image are generated from `src/app/icon.svg`, `src/app/apple-icon.svg`, and `src/app/opengraph-image.tsx`.
 
@@ -246,6 +257,7 @@ ai-trading-signals-dashboard/
 │   └── ppo_policy_100k.onnx      # Source checkpoint for the weight export
 ├── scripts/
 │   ├── download-stooq-data.ts
+│   ├── db-migrate.ts             # Applies src/lib/db/schema.sql to Neon
 │   └── export-ppo-weights.py     # ONNX → src/lib/ppo/ppo-weights.ts
 ├── src/
 │   ├── app/
@@ -262,6 +274,7 @@ ai-trading-signals-dashboard/
 │   │   └── ui/                   # shadcn primitives
 │   ├── hooks/                    # Bootstrap, replay, market watch, analytics
 │   ├── lib/                      # Metrics, replay, operating modes
+│   │   ├── db/                   # Neon client, schema, repositories, sync
 │   │   └── ppo/                  # Weights, TypeScript policy, backtest
 │   ├── store/                    # Zustand dashboard store
 │   └── types/rl-trading.ts
@@ -278,10 +291,10 @@ The browser calls same-origin routes; all model and data work happens server-sid
 
 | Route | Role |
 |-------|------|
-| `GET /api/dashboard-data` | Full PPO backtest over the bundled history — equity, benchmark, allocations |
-| `GET /api/health` | Policy self-test (loads weights, runs a probe observation) |
+| `GET /api/dashboard-data` | Syncs Postgres from the CSV, then serves the stored PPO backtest |
+| `GET /api/health` | Policy self-test plus Postgres reachability and bar count |
 | `POST /api/predict` | PPO inference for one 11-dim observation |
-| `GET /api/market-data` | CSV prices for Market Watch |
+| `GET /api/market-data` | OHLCV bars for Market Watch, from Postgres |
 
 `POST /api/predict` takes `{ "observation": [cash, ...5 share counts, ...5 prices] }` and returns `raw_action` (policy logits), `allocations` (softmax weights), and the critic `value`.
 
@@ -291,9 +304,26 @@ The browser calls same-origin routes; all model and data work happens server-sid
 
 | Source | When used |
 |--------|-----------|
-| **Stooq CSV** | `data/market/prices.csv` after `npm run data:stooq` — full OHLCV historical replay |
-| **Bundled sp500.csv** | `data/sp500.csv`, committed close-only history — the default in a fresh deployment |
+| **Neon Postgres** | Serves every dashboard request once the tables are populated |
+| **Stooq CSV** | `data/market/prices.csv` after `npm run data:stooq` — full OHLCV, seeds Postgres |
+| **Bundled sp500.csv** | `data/sp500.csv`, committed close-only history — the default seed |
 | **Remote sp500.csv** | `MARKET_DATA_SP500_CSV_URL`, only if neither file is on disk |
+
+### Persistence
+
+Opening the dashboard calls `GET /api/dashboard-data`, which:
+
+1. compares the bundled CSV against `market_bars` and re-uploads only when the range differs;
+2. looks for a `backtest_runs` row whose fingerprint matches the current model checkpoint, starting cash, transaction cost, and bar range;
+3. runs the PPO backtest and stores its curve in `backtest_points` only when no such run exists.
+
+So the first boot writes ~12.5k bars and computes 2,516 policy evaluations; subsequent boots are two queries and no model work. A stored curve round-trips bit-for-bit — the served equity history is identical to a freshly computed one.
+
+| Table | Contents |
+|-------|----------|
+| `market_bars` | Daily OHLCV, one row per (ticker, date) |
+| `backtest_runs` | One row per backtest: fingerprint, model SHA, final values, allocation |
+| `backtest_points` | Agent and benchmark equity, one row per trading day |
 
 Universe: **AAPL · MSFT · GOOGL · AMZN · NVDA** (see `src/lib/constants.ts`).
 

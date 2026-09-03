@@ -14,9 +14,17 @@
  */
 
 import { INITIAL_BALANCE, RL_TICKERS, TRANSACTION_COST } from "@/lib/constants";
-import type { MarketDataRow } from "@/lib/market-csv";
 import { runPolicy } from "@/lib/ppo/policy";
 import type { AllocationWeights, PriceHistoryPoint, Ticker } from "@/types/rl-trading";
+
+/**
+ * Minimum a bar needs for the simulation: a date and one close per ticker.
+ * Both `MarketDataRow` (CSV) and the pivoted Postgres rows satisfy this.
+ */
+export interface BacktestBar {
+  date: string;
+  prices: Record<Ticker, number>;
+}
 
 export interface PpoBacktestResult {
   agent_history: number[];
@@ -35,7 +43,7 @@ function equalAllocation(): AllocationWeights {
   return { AAPL: w, MSFT: w, GOOGL: w, AMZN: w, NVDA: w };
 }
 
-function pricesVector(row: MarketDataRow): number[] {
+function pricesVector(row: BacktestBar): number[] {
   return RL_TICKERS.map((t) => row.prices[t]);
 }
 
@@ -53,7 +61,7 @@ function weightsToAllocation(weights: number[]): AllocationWeights {
   return out;
 }
 
-function toPriceHistory(rows: MarketDataRow[]): PriceHistoryPoint[] {
+function toPriceHistory(rows: BacktestBar[]): PriceHistoryPoint[] {
   return rows.map((r) => ({
     Date: r.date,
     AAPL: r.prices.AAPL,
@@ -65,7 +73,7 @@ function toPriceHistory(rows: MarketDataRow[]): PriceHistoryPoint[] {
 }
 
 /** Equal-weight buy & hold marked daily — the benchmark curve. */
-function benchmarkHistory(rows: MarketDataRow[], startingCash: number): number[] {
+function benchmarkHistory(rows: BacktestBar[], startingCash: number): number[] {
   const firstPrices = pricesVector(rows[0]);
   const dollarsPerStock = startingCash / RL_TICKERS.length;
   const sharesPerStock = firstPrices.map((p) => dollarsPerStock / p);
@@ -73,7 +81,7 @@ function benchmarkHistory(rows: MarketDataRow[], startingCash: number): number[]
 }
 
 export function runPpoBacktest(
-  rows: MarketDataRow[],
+  rows: BacktestBar[],
   startingCash: number = INITIAL_BALANCE,
 ): PpoBacktestResult {
   if (rows.length < 2) {
